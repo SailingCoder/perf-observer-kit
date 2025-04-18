@@ -21,7 +21,12 @@ export class ResourceTimingObserver {
         for (const entry of entries) {
           if (entry.entryType === 'resource') {
             const resourceEntry = entry as PerformanceResourceTiming;
-            
+            // 静态资源过滤
+            const staticTypes = ['script', 'link', 'img', 'css', 'font'];
+            if (!staticTypes.includes(resourceEntry.initiatorType)) {
+              continue;
+            }
+
             // 避免重复条目
             const existingEntryIndex = this.resources.findIndex(
               r => r.name === resourceEntry.name && r.startTime === resourceEntry.startTime
