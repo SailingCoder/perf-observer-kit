@@ -1,0 +1,133 @@
+# perf-observer-kit
+
+A comprehensive web performance monitoring library that focuses on collecting:
+
+- Core Web Vitals (LCP, FID, CLS, INP)
+- Resource loading metrics
+- Long tasks
+- TTFB (Time to First Byte)
+
+[中文文档](./README_CN.md)
+
+## Installation
+
+```bash
+npm install perf-observer-kit
+```
+
+## Usage
+
+```javascript
+import { PerfObserverKit } from 'perf-observer-kit';
+
+// Initialize with default configuration
+const perfMonitor = new PerfObserverKit({
+  onMetrics: (metrics) => {
+    console.log('Performance metrics:', metrics);
+    // Send metrics to your analytics platform
+  }
+});
+
+// Start monitoring
+perfMonitor.start();
+
+// Stop monitoring when needed
+// perfMonitor.stop();
+```
+
+### Using via CDN in the browser
+
+```html
+<!-- 通过unpkg CDN -->
+<script src="https://unpkg.com/perf-observer-kit@latest/dist/perf-observer-kit.browser.min.js"></script>
+<!-- 或者通过jsDelivr -->
+<script src="https://cdn.jsdelivr.net/npm/perf-observer-kit@latest/dist/perf-observer-kit.browser.min.js"></script>
+
+<script>
+  // Global object: window.PerfObserverKit
+  const monitor = new PerfObserverKit.PerfObserverKit({
+    onMetrics: (metrics) => console.log('Performance metrics:', metrics)
+  });
+  
+  monitor.start();
+</script>
+```
+
+## Metrics Collected
+
+### Core Web Vitals
+
+- **LCP (Largest Contentful Paint)**
+  - Measures loading performance
+  - Good threshold: ≤ 2.5s
+
+- **FID (First Input Delay)**
+  - Measures interactivity
+  - Good threshold: ≤ 100ms
+  
+- **CLS (Cumulative Layout Shift)**
+  - Measures visual stability
+  - Good threshold: ≤ 0.1
+
+- **INP (Interaction to Next Paint)**
+  - Measures overall responsiveness
+  - Good threshold: ≤ 200ms
+
+### Resource Loading
+
+- Resource timing for scripts, stylesheets, images, etc.
+- Resource load success/failure
+- Resource size and load duration
+
+### Long Tasks
+
+- Detection of tasks taking longer than 50ms
+- Duration and attribution of long tasks
+
+### Navigation Timing
+
+- TTFB (Time to First Byte)
+- DOM Content Loaded
+- Load Event
+
+## Configuration Options
+
+```javascript
+const perfMonitor = new PerfObserverKit({
+  // Function to be called when metrics are collected
+  onMetrics: (metrics) => {},
+  
+  // Enable Core Web Vitals monitoring (default: true)
+  enableCoreWebVitals: true,
+  
+  // Enable Resource timing monitoring (default: true)
+  enableResourceTiming: true,
+  
+  // Enable Long Tasks monitoring (default: true)
+  enableLongTasks: true,
+  
+  // Enable Navigation timing monitoring (default: true)
+  enableNavigationTiming: true,
+  
+  // Custom sampling rate (ms, 0 means no sampling)
+  samplingRate: 0
+});
+```
+
+## Browser Compatibility
+
+This library primarily relies on:
+
+- Performance API
+- PerformanceObserver
+- Various performance entry types: largest-contentful-paint, first-input, layout-shift, resource, longtask, navigation
+
+For browsers that don't support certain performance metrics, the library gracefully degrades and only collects supported metrics.
+
+## Examples
+
+Check the `examples` directory for complete examples.
+
+## License
+
+MIT # perf-observer-kit
