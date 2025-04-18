@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Advanced PerfObserverKit Usage</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    
+    button {
+      padding: 8px 16px;
+      margin: 10px 0;
+      cursor: pointer;
+    }
+    
+    pre {
+      background-color: #f5f5f5;
+      padding: 10px;
+      border-radius: 4px;
+      overflow: auto;
+      max-height: 400px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Advanced PerfObserverKit Usage</h1>
+  
+  <h2>Features</h2>
+  <ul>
+    <li>Custom analytics integration</li>
+    <li>Selective metric collection</li>
+    <li>User journey tracking</li>
+  </ul>
+  
+  <div>
+    <button id="simulate-interaction">Simulate User Interaction</button>
+    <button id="load-resources">Load Resources</button>
+    <button id="cause-layout-shift">Cause Layout Shift</button>
+  </div>
+  
+  <h3>Metrics Log</h3>
+  <pre id="metrics-log"></pre>
+  
+  <div id="content-container"></div>
+  
+  <div class="img-container" id="img-container"></div>
+  
+  <!-- 加载我们的库 -->
+  <script src="../browser.js"></script>
+  <script>
+    // Helper to log metrics to the UI
+    function logToUI(message) {
+      const logEl = document.getElementById('metrics-log');
+      const timestamp = new Date().toISOString().split('T')[1].split('.')[0];
+      logEl.textContent = `[${timestamp}] ${message}\n` + logEl.textContent;
+    }
+    
+    // Simulated analytics sender
+    class AnalyticsSender {
+      constructor() {
+        this.endpoint = 'https://example.com/analytics'; // Simulated endpoint
+        this.batchSize = 10;
+        this.metricsQueue = [];
+        this.userSession = this.generateSessionId();
+        
+        logToUI(`Analytics initialized with session ID: ${this.userSession}`);
+      }
+      
+      generateSessionId() {
+        return 'session-' + Math.random().toString(36).substring(2, 15);
+      }
+      
+      queueMetric(metricType, metricData) {
+        const analyticsPayload = {
+          timestamp: Date.now(),
+          sessionId: this.userSession,
+          type: metricType,
+          data: metricData
+        };
+        
+        this.metricsQueue.push(analyticsPayload);
+        logToUI(`Metric queued: ${metricType}`);
+        
+        if (this.metricsQueue.length >= this.batchSize) {
+          this.sendBatch();
+        }
+      }
+      
+      sendBatch() {
+        if (this.metricsQueue.length === 0) {
+          return;
+        }
+        
+        const batch = [...this.metricsQueue];
+        this.metricsQueue = [];
+        
+        // Simulate sending to an analytics endpoint
+        logToUI(`SENDING BATCH: ${batch.length} metrics`);
+        
+        // In a real implementation, this would be:
+        // fetch(this.endpoint, {
+        //   method: 'POST',
+        //   body: JSON.stringify(batch),
+        //   headers: { 'Content-Type': 'application/json' }
+        // });
+      }
+    }
+    
+    // Custom performance monitor that extends PerfObserverKit functionality
+    class CustomPerformanceMonitor {
+      constructor() {
+        this.analytics = new AnalyticsSender();
+        
+        // Initialize PerfObserverKit with selective monitoring
+        this.perfObserver = new PerfObserverKit.PerfObserverKit({
+          onMetrics: (metrics) => this.handleMetricsUpdate(metrics),
+          enableCoreWebVitals: true,
+          enableResourceTiming: true,
+          enableLongTasks: true,
+          enableNavigationTiming: true
+        });
+        
+        // Track user interactions
+        this.setupInteractionTracking();
+        
+        // Track page visibility changes
+        this.setupVisibilityTracking();
+      }
+      
+      start() {
+        this.perfObserver.start();
+        logToUI('Performance monitoring started');
+        
+        // Send initial page view event
+        this.analytics.queueMetric('pageview', {
+          url: window.location.href,
+          title: document.title,
+          referrer: document.referrer
+        });
+      }
+      
+      stop() {
+        this.perfObserver.stop();
+        this.analytics.sendBatch(); // Send any remaining metrics
+        logToUI('Performance monitoring stopped');
+      }
+      
+      handleMetricsUpdate(metrics) {
+        // Process Core Web Vitals
+        if (metrics.coreWebVitals.lcp && this.lastLCP !== metrics.coreWebVitals.lcp.value) {
+          this.lastLCP = metrics.coreWebVitals.lcp.value;
+          this.analytics.queueMetric('web_vitals', {
+            name: 'LCP',
+            value: this.lastLCP,
+            rating: metrics.coreWebVitals.lcp.rating
+          });
+          
+          logToUI(`LCP: ${this.lastLCP.toFixed(0)}ms (${metrics.coreWebVitals.lcp.rating})`);
+        }
+        
+        if (metrics.coreWebVitals.fid && !this.fidReported) {
+          this.fidReported = true;
+          this.analytics.queueMetric('web_vitals', {
+            name: 'FID',
+            value: metrics.coreWebVitals.fid.value,
+            rating: metrics.coreWebVitals.fid.rating
+          });
+          
+          logToUI(`FID: ${metrics.coreWebVitals.fid.value.toFixed(0)}ms (${metrics.coreWebVitals.fid.rating})`);
+        }
+        
+        if (metrics.coreWebVitals.cls && 
+            (!this.lastCLS || Math.abs(this.lastCLS - metrics.coreWebVitals.cls.value) > 0.01)) {
+          this.lastCLS = metrics.coreWebVitals.cls.value;
+          this.analytics.queueMetric('web_vitals', {
+            name: 'CLS',
+            value: this.lastCLS,
+            rating: metrics.coreWebVitals.cls.rating
+          });
+          
+          logToUI(`CLS: ${this.lastCLS.toFixed(3)} (${metrics.coreWebVitals.cls.rating})`);
+        }
+        
+        // Handle new long tasks
+        if (metrics.longTasks.length > this.lastLongTasksCount) {
+          const newTasks = metrics.longTasks.slice(this.lastLongTasksCount);
+          this.lastLongTasksCount = metrics.longTasks.length;
+          
+          for (const task of newTasks) {
+            if (task.duration > 100) { // Only report significant long tasks
+              this.analytics.queueMetric('long_task', {
+                duration: task.duration,
+                startTime: task.startTime,
+                attribution: task.attribution
+              });
+              
+              logToUI(`Long Task: ${task.duration.toFixed(0)}ms`);
+            }
+          }
+        }
+        
+        // Navigation timing (only report once)
+        if (metrics.navigation.ttfb && !this.ttfbReported) {
+          this.ttfbReported = true;
+          this.analytics.queueMetric('navigation', {
+            ttfb: metrics.navigation.ttfb.value,
+            domContentLoaded: metrics.navigation.domContentLoaded?.value,
+            loadEvent: metrics.navigation.loadEvent?.value
+          });
+          
+          logToUI(`TTFB: ${metrics.navigation.ttfb.value.toFixed(0)}ms (${metrics.navigation.ttfb.rating})`);
+        }
+      }
+      
+      setupInteractionTracking() {
+        // Track clicks with additional context
+        document.addEventListener('click', (event) => {
+          // Get some context about what was clicked
+          let targetInfo = 'unknown';
+          if (event.target.id) {
+            targetInfo = `#${event.target.id}`;
+          } else if (event.target.className) {
+            targetInfo = `.${event.target.className.split(' ')[0]}`;
+          } else {
+            targetInfo = event.target.tagName.toLowerCase();
+          }
+          
+          this.analytics.queueMetric('user_interaction', {
+            type: 'click',
+            target: targetInfo,
+            timestamp: performance.now()
+          });
+          
+          logToUI(`User clicked: ${targetInfo}`);
+        });
+      }
+      
+      setupVisibilityTracking() {
+        // Track when the page becomes visible or hidden
+        document.addEventListener('visibilitychange', () => {
+          const isVisible = document.visibilityState === 'visible';
+          
+          this.analytics.queueMetric('visibility', {
+            state: isVisible ? 'visible' : 'hidden',
+            timestamp: performance.now()
+          });
+          
+          logToUI(`Page visibility changed: ${isVisible ? 'visible' : 'hidden'}`);
+          
+          // If page becomes visible again, we might want to refresh some metrics
+          if (isVisible) {
+            // Additional logic if needed when page becomes visible again
+          }
+        });
+      }
+    }
+    
+    // Initialize the custom performance monitor
+    const monitor = new CustomPerformanceMonitor();
+    monitor.start();
+    
+    // Demo buttons functionality
+    document.getElementById('simulate-interaction').addEventListener('click', () => {
+      logToUI('Simulating complex user interaction...');
+      
+      // Simulate a task that blocks the main thread
+      const start = performance.now();
+      while (performance.now() - start < 80) {
+        // Blocking calculation
+        const arr = Array(1000).fill(0).map((_, i) => Math.sqrt(i));
+        arr.sort((a, b) => b - a);
+      }
+    });
+    
+    document.getElementById('load-resources').addEventListener('click', () => {
+      logToUI('Loading some resources...');
+      
+      // Load some images to generate resource timing entries
+      const container = document.getElementById('content-container');
+      container.innerHTML = '';
+      
+      for (let i = 0; i < 3; i++) {
+        const img = document.createElement('img');
+        img.src = `https://picsum.photos/200/150?random=${Math.random()}`;
+        img.style.margin = '10px';
+        container.appendChild(img);
+      }
+    });
+    
+    document.getElementById('cause-layout-shift').addEventListener('click', () => {
+      logToUI('Causing layout shift...');
+      
+      // Create layout shift by inserting elements and moving existing content
+      const container = document.getElementById('content-container');
+      
+      // Insert a large element at the top
+      const header = document.createElement('div');
+      header.style.height = '100px';
+      header.style.background = '#f0f0f0';
+      header.style.margin = '20px 0';
+      header.style.padding = '20px';
+      header.style.borderRadius = '4px';
+      header.textContent = 'This element causes layout shift!';
+      
+      container.insertBefore(header, container.firstChild);
+    });
+    
+    // Cleanup on page unload
+    window.addEventListener('beforeunload', () => {
+      monitor.stop();
+    });
+  </script>
+</body>
+</html> 

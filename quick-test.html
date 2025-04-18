@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PerfObserverKit 快速测试</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    button {
+      padding: 8px 16px;
+      margin: 10px 0;
+      background: #0066cc;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .box {
+      padding: 20px;
+      margin: 20px 0;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body>
+  <h1>PerfObserverKit 快速测试</h1>
+  
+  <div class="box">
+    <h2>操作</h2>
+    <button id="generate-load">生成负载</button>
+    <button id="add-content">添加内容</button>
+    <button id="force-layout-shift">强制布局偏移</button>
+  </div>
+  
+  <div id="content-area" class="box">
+    <h2>内容区域</h2>
+    <p>这里将显示动态内容和布局偏移效果。</p>
+  </div>
+  
+  <div class="box">
+    <h2>使用说明</h2>
+    <p>1. 打开浏览器控制台查看性能指标日志</p>
+    <p>2. 点击按钮触发不同的性能事件</p>
+    <p>3. 观察控制台输出的性能数据</p>
+  </div>
+  
+  <!-- 加载我们的库 -->
+  <script src="browser.js"></script>
+  
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      console.log('测试 PerfObserverKit 是否正常工作...');
+      
+      // 检查库是否加载成功
+      if (typeof PerfObserverKit === 'undefined') {
+        console.error('PerfObserverKit 未成功加载！');
+        document.body.innerHTML = '<h1 style="color:red">错误：PerfObserverKit 未成功加载</h1>' + document.body.innerHTML;
+        return;
+      }
+      
+      // 初始化监控实例
+      const perfMonitor = new PerfObserverKit.PerfObserverKit({
+        onMetrics: function(metrics) {
+          console.log('[' + new Date().toISOString() + '] 收集到性能指标:', metrics);
+          
+          // 记录核心Web指标
+          if (metrics.coreWebVitals.lcp) {
+            console.log('LCP:', metrics.coreWebVitals.lcp.value.toFixed(2) + 'ms', 
+                        '(' + metrics.coreWebVitals.lcp.rating + ')');
+          }
+          
+          if (metrics.coreWebVitals.cls) {
+            console.log('CLS:', metrics.coreWebVitals.cls.value.toFixed(4), 
+                        '(' + metrics.coreWebVitals.cls.rating + ')');
+          }
+          
+          if (metrics.navigation.ttfb) {
+            console.log('TTFB:', metrics.navigation.ttfb.value.toFixed(2) + 'ms',
+                        '(' + metrics.navigation.ttfb.rating + ')');
+          }
+          
+          // 记录长任务
+          if (metrics.longTasks.length > 0) {
+            const lastTask = metrics.longTasks[metrics.longTasks.length - 1];
+            console.log('长任务:', lastTask.duration.toFixed(2) + 'ms');
+          }
+        }
+      });
+      
+      // 启动监控
+      perfMonitor.start();
+      
+      console.log('性能监控已启动，请查看控制台日志...');
+      
+      // 按钮事件处理
+      document.getElementById('generate-load').addEventListener('click', function() {
+        console.log('生成CPU负载...');
+        
+        // 创建一个长任务
+        const start = performance.now();
+        while (performance.now() - start < 150) {
+          // 阻塞主线程
+          const array = [];
+          for (let i = 0; i < 10000; i++) {
+            array.push(Math.random());
+          }
+          array.sort();
+        }
+      });
+      
+      document.getElementById('add-content').addEventListener('click', function() {
+        console.log('添加内容...');
+        
+        const contentArea = document.getElementById('content-area');
+        
+        // 添加一些图片和文字内容
+        const imgElem = document.createElement('img');
+        imgElem.src = 'https://picsum.photos/400/200?random=' + Math.random();
+        imgElem.style.maxWidth = '100%';
+        imgElem.style.height = 'auto';
+        imgElem.style.display = 'block';
+        imgElem.style.margin = '10px 0';
+        
+        contentArea.appendChild(imgElem);
+        
+        // 添加一些文本
+        const pElem = document.createElement('p');
+        pElem.textContent = '这是动态添加的内容，用于测试LCP和其他指标。时间戳: ' + new Date().toISOString();
+        contentArea.appendChild(pElem);
+      });
+      
+      document.getElementById('force-layout-shift').addEventListener('click', function() {
+        console.log('强制布局偏移...');
+        
+        const contentArea = document.getElementById('content-area');
+        
+        // 创建一个新元素
+        const newElem = document.createElement('div');
+        newElem.style.height = '100px';
+        newElem.style.background = '#f0f0f0';
+        newElem.style.padding = '20px';
+        newElem.style.margin = '15px 0';
+        newElem.textContent = '这个元素会导致布局偏移 - ' + new Date().toTimeString();
+        
+        // 添加到内容区的顶部，这会推动现有内容
+        contentArea.insertBefore(newElem, contentArea.firstChild);
+      });
+    });
+  </script>
+</body>
+</html> 

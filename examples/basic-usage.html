@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Basic PerfObserverKit Usage</title>
+</head>
+<body>
+  <h1>Basic PerfObserverKit Usage</h1>
+  <p>Open the browser console to see performance metrics</p>
+
+  <!-- 加载我们的库 -->
+  <script src="../browser.js"></script>
+  <script>
+    // Initialize the performance monitoring
+    const perfMonitor = new PerfObserverKit.PerfObserverKit({
+      onMetrics: (metrics) => {
+        console.log('Performance metrics updated:', metrics);
+        
+        // Log Core Web Vitals when they change
+        if (metrics.coreWebVitals.lcp) {
+          console.log(`LCP: ${metrics.coreWebVitals.lcp.value.toFixed(2)}ms (${metrics.coreWebVitals.lcp.rating})`);
+        }
+        
+        if (metrics.coreWebVitals.fid) {
+          console.log(`FID: ${metrics.coreWebVitals.fid.value.toFixed(2)}ms (${metrics.coreWebVitals.fid.rating})`);
+        }
+        
+        if (metrics.coreWebVitals.cls) {
+          console.log(`CLS: ${metrics.coreWebVitals.cls.value.toFixed(4)} (${metrics.coreWebVitals.cls.rating})`);
+        }
+        
+        // Log TTFB when available
+        if (metrics.navigation.ttfb) {
+          console.log(`TTFB: ${metrics.navigation.ttfb.value.toFixed(2)}ms (${metrics.navigation.ttfb.rating})`);
+        }
+      }
+    });
+    
+    // Start monitoring
+    perfMonitor.start();
+    
+    // You can get metrics at any time
+    setTimeout(() => {
+      const currentMetrics = perfMonitor.getMetrics();
+      console.log('Current metrics after 5 seconds:', currentMetrics);
+    }, 5000);
+    
+    // You can stop monitoring when needed
+    // perfMonitor.stop();
+  </script>
+</body>
+</html>
+ 
