@@ -42,6 +42,34 @@
     
     // 核心Web指标监控
     if (this.options.enableCoreWebVitals) {
+      // FCP监控
+      this._observeMetric('paint', function(entries) {
+        for (var i = 0; i < entries.length; i++) {
+          var entry = entries[i];
+          if (entry.name === 'first-contentful-paint') {
+            var fcp = {
+              name: 'FCP',
+              value: entry.startTime,
+              unit: 'ms',
+              timestamp: performance.now()
+            };
+            
+            // FCP评级阈值
+            if (fcp.value <= 1800) {
+              fcp.rating = 'good';
+            } else if (fcp.value <= 3000) {
+              fcp.rating = 'needs-improvement';
+            } else {
+              fcp.rating = 'poor';
+            }
+            
+            self.metrics.coreWebVitals.fcp = fcp;
+            self._notifyMetricsUpdate();
+            break;
+          }
+        }
+      });
+      
       // LCP监控
       this._observeMetric('largest-contentful-paint', function(entries) {
         var lastEntry = entries[entries.length - 1];

@@ -2,7 +2,7 @@
 
 一个全面的Web性能监控库，专注于收集：
 
-- 核心Web指标（Core Web Vitals：LCP, FID, CLS, INP）
+- 核心Web指标（Core Web Vitals：FCP, LCP, FID, CLS, INP）
 - 资源加载指标
 - 长任务（Long Tasks）
 - TTFB（Time to First Byte）
@@ -54,6 +54,10 @@ perfMonitor.start();
 ## 收集的指标
 
 ### 核心Web指标 (Core Web Vitals)
+
+- **FCP (First Contentful Paint)** - 首次内容绘制
+  - 测量页面首次内容绘制的时间
+  - 优良值: ≤ 1秒
 
 - **LCP (Largest Contentful Paint)** - 最大内容绘制
   - 测量页面主要内容的加载速度

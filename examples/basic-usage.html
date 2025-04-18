@@ -18,6 +18,10 @@
         console.log('Performance metrics updated:', metrics);
         
         // Log Core Web Vitals when they change
+        if (metrics.coreWebVitals.fcp) {
+          console.log(`FCP: ${metrics.coreWebVitals.fcp.value.toFixed(2)}ms (${metrics.coreWebVitals.fcp.rating})`);
+        }
+        
         if (metrics.coreWebVitals.lcp) {
           console.log(`LCP: ${metrics.coreWebVitals.lcp.value.toFixed(2)}ms (${metrics.coreWebVitals.lcp.rating})`);
         }

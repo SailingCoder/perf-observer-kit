@@ -11,6 +11,7 @@ interface LayoutShift extends PerformanceEntry {
  */
 export class CoreWebVitalsObserver {
   private observer: PerformanceObserver | null = null;
+  private fcpObserver: PerformanceObserver | null = null;
   private lcpObserver: PerformanceObserver | null = null;
   private fidObserver: PerformanceObserver | null = null;
   private clsObserver: PerformanceObserver | null = null;
@@ -27,6 +28,7 @@ export class CoreWebVitalsObserver {
   }
 
   start(): void {
+    this.observeFCP();
     this.observeLCP();
     this.observeFID();
     this.observeCLS();
@@ -34,6 +36,11 @@ export class CoreWebVitalsObserver {
   }
 
   stop(): void {
+    if (this.fcpObserver) {
+      this.fcpObserver.disconnect();
+      this.fcpObserver = null;
+    }
+    
     if (this.lcpObserver) {
       this.lcpObserver.disconnect();
       this.lcpObserver = null;
@@ -57,6 +64,47 @@ export class CoreWebVitalsObserver {
 
   getMetrics(): CoreWebVitalsMetrics {
     return this.metrics;
+  }
+
+  private observeFCP(): void {
+    try {
+      this.fcpObserver = new PerformanceObserver((entryList) => {
+        const entries = entryList.getEntries();
+        
+        for (const entry of entries) {
+          if (entry.name === 'first-contentful-paint') {
+            const fcp: MetricData = {
+              name: 'FCP',
+              value: entry.startTime,
+              unit: 'ms',
+              timestamp: performance.now(),
+            };
+            
+            // FCP评级阈值
+            if (fcp.value <= 1800) {
+              fcp.rating = 'good';
+            } else if (fcp.value <= 3000) {
+              fcp.rating = 'needs-improvement';
+            } else {
+              fcp.rating = 'poor';
+            }
+            
+            this.metrics.fcp = fcp;
+            this.onUpdate(this.metrics);
+            
+            // FCP只报告一次
+            if (this.fcpObserver) {
+              this.fcpObserver.disconnect();
+            }
+            break;
+          }
+        }
+      });
+      
+      this.fcpObserver.observe({ type: 'paint', buffered: true });
+    } catch (error) {
+      console.error('FCP monitoring not supported', error);
+    }
   }
 
   private observeLCP(): void {

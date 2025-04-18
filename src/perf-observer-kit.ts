@@ -123,6 +123,7 @@ export class PerfObserverKit {
    */
   private startCoreWebVitalsMonitoring(): void {
     const requiredEntryTypes = [
+      'paint', // For FCP
       'largest-contentful-paint',
       'first-input',
       'layout-shift'

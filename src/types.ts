@@ -7,6 +7,7 @@ export interface MetricData {
 }
 
 export interface CoreWebVitalsMetrics {
+  fcp?: MetricData;
   lcp?: MetricData;
   fid?: MetricData;
   cls?: MetricData;

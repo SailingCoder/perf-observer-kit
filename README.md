@@ -2,7 +2,7 @@
 
 A comprehensive web performance monitoring library that focuses on collecting:
 
-- Core Web Vitals (LCP, FID, CLS, INP)
+- Core Web Vitals (FCP, LCP, FID, CLS, INP)
 - Resource loading metrics
 - Long tasks
 - TTFB (Time to First Byte)
@@ -56,6 +56,10 @@ perfMonitor.start();
 ## Metrics Collected
 
 ### Core Web Vitals
+
+- **FCP (First Contentful Paint)**
+  - Measures the time it takes for the first content to be painted
+  - Good threshold: ≤ 1.8s
 
 - **LCP (Largest Contentful Paint)**
   - Measures loading performance

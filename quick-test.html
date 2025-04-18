@@ -70,26 +70,31 @@
           console.log('[' + new Date().toISOString() + '] 收集到性能指标:', metrics);
           
           // 记录核心Web指标
+          if (metrics.coreWebVitals.fcp) {
+            console.log('FCP:', metrics.coreWebVitals.fcp.value.toFixed(2) + 'ms', 
+                        '(' + metrics.coreWebVitals.fcp.rating + ')');
+          }
+          
           if (metrics.coreWebVitals.lcp) {
             console.log('LCP:', metrics.coreWebVitals.lcp.value.toFixed(2) + 'ms', 
                         '(' + metrics.coreWebVitals.lcp.rating + ')');
           }
           
-          if (metrics.coreWebVitals.cls) {
-            console.log('CLS:', metrics.coreWebVitals.cls.value.toFixed(4), 
-                        '(' + metrics.coreWebVitals.cls.rating + ')');
-          }
+          // if (metrics.coreWebVitals.cls) {
+          //   console.log('CLS:', metrics.coreWebVitals.cls.value.toFixed(4), 
+          //               '(' + metrics.coreWebVitals.cls.rating + ')');
+          // }
           
-          if (metrics.navigation.ttfb) {
-            console.log('TTFB:', metrics.navigation.ttfb.value.toFixed(2) + 'ms',
-                        '(' + metrics.navigation.ttfb.rating + ')');
-          }
+          // if (metrics.navigation.ttfb) {
+          //   console.log('TTFB:', metrics.navigation.ttfb.value.toFixed(2) + 'ms',
+          //               '(' + metrics.navigation.ttfb.rating + ')');
+          // }
           
-          // 记录长任务
-          if (metrics.longTasks.length > 0) {
-            const lastTask = metrics.longTasks[metrics.longTasks.length - 1];
-            console.log('长任务:', lastTask.duration.toFixed(2) + 'ms');
-          }
+          // // 记录长任务
+          // if (metrics.longTasks.length > 0) {
+          //   const lastTask = metrics.longTasks[metrics.longTasks.length - 1];
+          //   console.log('长任务:', lastTask.duration.toFixed(2) + 'ms');
+          // }
         }
       });
       

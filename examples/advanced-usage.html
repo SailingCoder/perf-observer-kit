@@ -152,6 +152,17 @@
       
       handleMetricsUpdate(metrics) {
         // Process Core Web Vitals
+        if (metrics.coreWebVitals.fcp && !this.fcpReported) {
+          this.fcpReported = true;
+          this.analytics.queueMetric('web_vitals', {
+            name: 'FCP',
+            value: metrics.coreWebVitals.fcp.value,
+            rating: metrics.coreWebVitals.fcp.rating
+          });
+          
+          logToUI(`FCP: ${metrics.coreWebVitals.fcp.value.toFixed(0)}ms (${metrics.coreWebVitals.fcp.rating})`);
+        }
+        
         if (metrics.coreWebVitals.lcp && this.lastLCP !== metrics.coreWebVitals.lcp.value) {
           this.lastLCP = metrics.coreWebVitals.lcp.value;
           this.analytics.queueMetric('web_vitals', {
