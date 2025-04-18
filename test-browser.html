@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PerfObserverKit 浏览器测试</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+      line-height: 1.6;
+    }
+    #metrics {
+      background-color: #f5f5f5;
+      padding: 15px;
+      border-radius: 5px;
+      margin-top: 20px;
+      white-space: pre;
+      font-family: monospace;
+    }
+    button {
+      padding: 8px 16px;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      margin-right: 10px;
+    }
+    button:hover {
+      background-color: #45a049;
+    }
+  </style>
+</head>
+<body>
+  <h1>PerfObserverKit 浏览器测试</h1>
+  <p>这个页面用于测试通过构建系统生成的浏览器版本 JavaScript 文件。</p>
+  
+  <div>
+    <button id="startBtn">开始监控</button>
+    <button id="stopBtn">停止监控</button>
+  </div>
+  
+  <div id="metrics">等待监控数据...</div>
+  
+  <!-- 加载构建后的 JavaScript 文件 -->
+  <script src="dist/perf-observer-kit.browser.js"></script>
+  
+  <script>
+    console.log('加载的 PerfObserverKit:', PerfObserverKit);
+    
+    // 检查 PerfObserverKit 是否已正确加载
+    if (!PerfObserverKit || !PerfObserverKit.PerfObserverKit) {
+      document.getElementById('metrics').textContent = '错误: PerfObserverKit 未正确加载!';
+    } else {
+      console.log('PerfObserverKit 已加载:', PerfObserverKit);
+      
+      let perfKit = null;
+      
+      document.getElementById('startBtn').addEventListener('click', function() {
+        if (perfKit) {
+          document.getElementById('metrics').textContent = 'PerfObserverKit 已在运行!';
+          return;
+        }
+        
+        // 创建 PerfObserverKit 实例
+        perfKit = new PerfObserverKit.PerfObserverKit({
+          onMetrics: function(metrics) {
+            document.getElementById('metrics').textContent = JSON.stringify(metrics, null, 2);
+          }
+        });
+        
+        // 开始监控
+        perfKit.start();
+        console.log('开始监控');
+      });
+      
+      document.getElementById('stopBtn').addEventListener('click', function() {
+        if (!perfKit) {
+          document.getElementById('metrics').textContent = 'PerfObserverKit 未运行!';
+          return;
+        }
+        
+        // 停止监控
+        perfKit.stop();
+        console.log('停止监控');
+        perfKit = null;
+      });
+    }
+  </script>
+  
+  <!-- 添加一些内容来触发 LCP -->
+  <div style="margin-top: 20px;">
+    <img src="https://via.placeholder.com/600x400" alt="大图片" width="600" height="400">
+  </div>
+</body>
+</html> 

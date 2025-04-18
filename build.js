@@ -23,22 +23,20 @@ try {
   process.exit(1);
 }
 
-// 复制浏览器版本到dist目录
+// 使用 Rollup 构建 UMD 版本
 try {
-  console.log('复制浏览器版本...');
-  fs.copyFileSync(
-    path.join(__dirname, 'browser.js'), 
-    path.join(distDir, 'perf-observer-kit.browser.js')
-  );
-  console.log('浏览器版本复制完成!');
+  console.log('构建 UMD 版本...');
+  execSync('npx rollup -c rollup.config.js', { stdio: 'inherit' });
+  console.log('UMD 版本构建完成!');
 } catch (error) {
-  console.error('复制浏览器版本失败:', error);
+  console.error('UMD 版本构建失败:', error);
+  process.exit(1);
 }
 
 // 创建压缩版本
 try {
   console.log('创建压缩版本...');
-  const browserCode = fs.readFileSync(path.join(__dirname, 'browser.js'), 'utf-8');
+  const browserCode = fs.readFileSync(path.join(distDir, 'perf-observer-kit.browser.js'), 'utf-8');
   
   // 简单的压缩（移除注释和多余空格）
   const minified = browserCode
