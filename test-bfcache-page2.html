@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PerfObserverKit BFCache 测试 - 第二页</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+      line-height: 1.6;
+    }
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+    }
+    button {
+      padding: 8px 16px;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      margin-right: 10px;
+    }
+    button:hover {
+      background-color: #45a049;
+    }
+    .instructions {
+      background-color: #ffffd8;
+      padding: 15px;
+      border-radius: 5px;
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>第二页</h1>
+    
+    <div class="instructions">
+      <p>这是第二个页面。点击下面的"返回"按钮触发浏览器的后退操作，这应该会导致第一个页面从 bfcache 中恢复。</p>
+    </div>
+    
+    <div>
+      <button id="backBtn">返回</button>
+    </div>
+    
+    <div style="margin-top: 20px;">
+      <p>当你点击"返回"按钮返回第一个页面时，浏览器可能会使用 bfcache (后退/前进缓存) 来恢复页面状态，而不是重新加载页面。</p>
+      <p>这会触发第一个页面上的 pageshow 事件，并且 event.persisted 属性将为 true，表明页面是从 bfcache 中恢复的。</p>
+      <p>PerfObserverKit 将检测到这一点，并重新计算从 bfcache 恢复到当前时间的间隔作为新的 LCP 值。</p>
+    </div>
+  </div>
+  
+  <script>
+    document.getElementById('backBtn').addEventListener('click', function() {
+      // 使用浏览器的后退功能
+      window.history.back();
+    });
+  </script>
+</body>
+</html> 

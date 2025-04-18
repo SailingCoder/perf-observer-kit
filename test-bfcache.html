@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PerfObserverKit BFCache 恢复测试</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+      line-height: 1.6;
+    }
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+    }
+    .metrics {
+      background-color: #f5f5f5;
+      padding: 15px;
+      border-radius: 5px;
+      margin-top: 20px;
+      white-space: pre;
+      font-family: monospace;
+      overflow-wrap: break-word;
+      max-height: 300px;
+      overflow-y: auto;
+    }
+    button {
+      padding: 8px 16px;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      margin-right: 10px;
+    }
+    button:hover {
+      background-color: #45a049;
+    }
+    .instructions {
+      background-color: #ffffd8;
+      padding: 15px;
+      border-radius: 5px;
+      margin-top: 20px;
+    }
+    #navigationLog {
+      margin-top: 20px;
+      border-top: 1px solid #ccc;
+      padding-top: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>PerfObserverKit BFCache 恢复测试</h1>
+    
+    <div class="instructions">
+      <h3>测试步骤：</h3>
+      <ol>
+        <li>点击"开始监控"按钮开始性能监控</li>
+        <li>点击"前往第二页"按钮导航到第二个页面</li>
+        <li>在第二个页面上点击"返回"按钮，这将触发浏览器的后退操作</li>
+        <li>当返回本页时，页面将从 bfcache 中恢复，您将看到计算的 LCP 值</li>
+      </ol>
+    </div>
+    
+    <div>
+      <button id="startBtn">开始监控</button>
+      <button id="navigateBtn">前往第二页</button>
+    </div>
+    
+    <div id="metrics" class="metrics">等待监控数据...</div>
+    
+    <div id="navigationLog">
+      <h3>导航日志:</h3>
+      <div id="log"></div>
+    </div>
+  </div>
+  
+  <!-- 加载构建后的 JavaScript 文件 -->
+  <script src="dist/perf-observer-kit.browser.js"></script>
+  
+  <script>
+    // 日志函数
+    function log(message) {
+      const logElement = document.getElementById('log');
+      const entry = document.createElement('div');
+      entry.textContent = `${new Date().toLocaleTimeString()}: ${message}`;
+      logElement.appendChild(entry);
+    }
+    
+    // 检查 PerfObserverKit 是否已正确加载
+    if (!PerfObserverKit || !PerfObserverKit.PerfObserverKit) {
+      document.getElementById('metrics').textContent = '错误: PerfObserverKit 未正确加载!';
+    } else {
+      log('页面加载完成');
+      
+      let perfKit = null;
+      
+      document.getElementById('startBtn').addEventListener('click', function() {
+        if (perfKit) {
+          document.getElementById('metrics').textContent = 'PerfObserverKit 已在运行!';
+          return;
+        }
+        
+        // 创建 PerfObserverKit 实例
+        perfKit = new PerfObserverKit.PerfObserverKit({
+          onMetrics: function(metrics) {
+            document.getElementById('metrics').textContent = JSON.stringify(metrics, null, 2);
+            
+            // 如果有LCP更新，记录日志
+            if (metrics.coreWebVitals && metrics.coreWebVitals.lcp) {
+              log(`LCP 更新: ${metrics.coreWebVitals.lcp.value.toFixed(2)}ms (${metrics.coreWebVitals.lcp.rating || 'unknown'})`);
+            }
+          }
+        });
+        
+        // 开始监控
+        perfKit.start();
+        log('开始性能监控');
+      });
+      
+      document.getElementById('navigateBtn').addEventListener('click', function() {
+        log('导航到第二页');
+        // 导航到第二个页面
+        window.location.href = 'test-bfcache-page2.html';
+      });
+      
+      // 检测是否从 bfcache 恢复
+      window.addEventListener('pageshow', function(event) {
+        if (event.persisted) {
+          log('页面从 bfcache 恢复!');
+        }
+      });
+    }
+    
+    // 添加一些大内容来触发 LCP
+    window.addEventListener('load', function() {
+      setTimeout(function() {
+        const container = document.querySelector('.container');
+        const largeImage = document.createElement('img');
+        largeImage.src = 'https://via.placeholder.com/800x400?text=Large+Content';
+        largeImage.alt = 'Large Content';
+        largeImage.width = 800;
+        largeImage.height = 400;
+        container.appendChild(largeImage);
+        
+        log('添加了大图片内容');
+      }, 500);
+    });
+  </script>
+</body>
+</html> 
