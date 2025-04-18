@@ -44,7 +44,9 @@ export class PerfObserverKit {
       enableResourceTiming: options.enableResourceTiming !== false,
       enableLongTasks: options.enableLongTasks !== false,
       enableNavigationTiming: options.enableNavigationTiming !== false,
-      samplingRate: options.samplingRate || 0 // 0 means no sampling, report all metrics
+      samplingRate: options.samplingRate || 0, // 0 means no sampling, report all metrics
+      excludedResourcePatterns: options.excludedResourcePatterns || [],
+      allowedResourceTypes: options.allowedResourceTypes || ['script', 'link', 'img', 'css', 'font']
     };
     
     // Check browser support
@@ -163,7 +165,9 @@ export class PerfObserverKit {
       (resources: ResourceMetrics[]) => {
         this.metrics.resources = resources;
         this.notifyMetricsUpdate();
-      }
+      },
+      this.options.excludedResourcePatterns,
+      this.options.allowedResourceTypes
     );
     
     this.resourceTimingObserver.start();

@@ -53,6 +53,12 @@ export interface PerfObserverOptions {
   /** Enable Resource timing monitoring */
   enableResourceTiming?: boolean;
   
+  /** Patterns to exclude from resource timing monitoring (string or RegExp) */
+  excludedResourcePatterns?: (string | RegExp)[];
+  
+  /** Resource initiator types to monitor (defaults to ['script', 'link', 'img', 'css', 'font']) */
+  allowedResourceTypes?: string[];
+  
   /** Enable Long Tasks monitoring */
   enableLongTasks?: boolean;
   

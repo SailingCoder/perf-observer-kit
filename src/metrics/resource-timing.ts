@@ -8,9 +8,21 @@ export class ResourceTimingObserver {
   private observer: PerformanceObserver | null = null;
   private resources: ResourceMetrics[] = [];
   private onUpdate: (resources: ResourceMetrics[]) => void;
+  private excludedPatterns: (string | RegExp)[] = [];
+  private allowedResourceTypes: string[] = ['script', 'link', 'img', 'css', 'font'];
   
-  constructor(onUpdate: (resources: ResourceMetrics[]) => void) {
+  constructor(
+    onUpdate: (resources: ResourceMetrics[]) => void, 
+    excludedPatterns: (string | RegExp)[] = [],
+    allowedResourceTypes?: string[]
+  ) {
     this.onUpdate = onUpdate;
+    this.excludedPatterns = excludedPatterns;
+    
+    // 如果提供了自定义资源类型，则使用它
+    if (allowedResourceTypes && allowedResourceTypes.length > 0) {
+      this.allowedResourceTypes = allowedResourceTypes;
+    }
   }
   
   start(): void {
@@ -22,8 +34,13 @@ export class ResourceTimingObserver {
           if (entry.entryType === 'resource') {
             const resourceEntry = entry as PerformanceResourceTiming;
             // 静态资源过滤
-            const staticTypes = ['script', 'link', 'img', 'css', 'font'];
-            if (!staticTypes.includes(resourceEntry.initiatorType)) {
+            if (!this.allowedResourceTypes.includes(resourceEntry.initiatorType)) {
+              continue;
+            }
+
+            // 检查是否在排除列表中
+            if (this.isExcluded(resourceEntry.name)) {
+              console.log('Resource excluded from monitoring:', resourceEntry.name);
               continue;
             }
 
@@ -58,6 +75,24 @@ export class ResourceTimingObserver {
     } catch (error) {
       console.error('Resource timing monitoring not supported', error);
     }
+  }
+  
+  /**
+   * 检查资源URL是否应被排除
+   * @param url 资源URL
+   * @returns 如果应该排除则返回true
+   */
+  private isExcluded(url: string): boolean {
+    if (!this.excludedPatterns.length) {
+      return false;
+    }
+    
+    return this.excludedPatterns.some(pattern => {
+      if (pattern instanceof RegExp) {
+        return pattern.test(url);
+      }
+      return url.includes(pattern);
+    });
   }
   
   stop(): void {
