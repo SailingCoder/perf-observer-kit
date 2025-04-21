@@ -41,6 +41,7 @@ export class CoreWebVitalsObserver {
   
   /**
    * 开始监控所有核心Web指标
+   * 暂时开放FCP和LCP
    */
   start(): void {
     // 启动FCP监测
@@ -53,20 +54,20 @@ export class CoreWebVitalsObserver {
       this.startLCPMonitoring();
     }
     
-    // 启动FID监测
-    if (this.options.includeFID) {
-      this.startFIDMonitoring();
-    }
+    // // 启动FID监测
+    // if (this.options.includeFID) {
+    //   this.startFIDMonitoring();
+    // }
     
-    // 启动CLS监测
-    if (this.options.includeCLS) {
-      this.startCLSMonitoring();
-    }
+    // // 启动CLS监测
+    // if (this.options.includeCLS) {
+    //   this.startCLSMonitoring();
+    // }
     
-    // 启动INP监测
-    if (this.options.includeINP) {
-      this.startINPMonitoring();
-    }
+    // // 启动INP监测
+    // if (this.options.includeINP) {
+    //   this.startINPMonitoring();
+    // }
   }
   
   /**
