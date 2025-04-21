@@ -6,6 +6,7 @@ import {
   ResourceMetrics,
   LongTaskMetrics,
   NavigationMetrics,
+  BrowserInfo,
   PerformanceMetrics
 } from './types';
 
@@ -18,6 +19,7 @@ export {
   ResourceMetrics,
   LongTaskMetrics,
   NavigationMetrics,
+  BrowserInfo,
   PerformanceMetrics
 };
 

@@ -94,6 +94,15 @@ perfMonitor.start();
 - DOM Content Loaded
 - Load Event
 
+### Browser Information
+
+- Browser name, version, and vendor
+- Operating system name and version
+- Screen and window size
+- Device pixel ratio
+- Current page URL
+- Language and platform information
+
 ## Configuration Options
 
 The library supports a modular configuration system, allowing fine-grained control over each monitoring module.
@@ -151,6 +160,14 @@ const perfMonitor = new PerfObserverKit({
   navigationTiming: {
     enabled: true,
     includeRawTiming: true // Include raw performance timing data
+  },
+  
+  // Browser Information configuration
+  browserInfo: {
+    enabled: true,
+    trackResize: true, // Update info when window size changes
+    includeOSDetails: true, // Include detailed OS information
+    includeSizeInfo: true // Include screen and window size information
   }
 });
 
@@ -221,6 +238,11 @@ console.log(currentMetrics.longTasks);          // Array of long tasks
 
 // Navigation metrics
 console.log(currentMetrics.navigation.ttfb);    // Time to First Byte
+
+// Browser information
+console.log(currentMetrics.browserInfo);        // Browser and device information
+console.log(currentMetrics.browserInfo.browser);// Browser name and version
+console.log(currentMetrics.browserInfo.os);     // Operating system details
 ```
 
 ## Browser Compatibility

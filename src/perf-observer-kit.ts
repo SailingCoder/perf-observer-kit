@@ -9,6 +9,8 @@ import {
   CoreWebVitalsOptions,
   LongTasksOptions,
   NavigationTimingOptions,
+  BrowserInfoOptions,
+  BrowserInfo,
   GlobalOptions
 } from './types';
 import { browserSupport } from './utils';
@@ -19,6 +21,7 @@ import { CoreWebVitalsObserver } from './metrics/core-web-vitals';
 import { ResourceTimingObserver } from './metrics/resource-timing';
 import { LongTasksObserver } from './metrics/long-tasks';
 import { NavigationTimingObserver } from './metrics/navigation-timing';
+import { BrowserInfoObserver } from './metrics/browser-observer';
 import {
   CoreWebVitalsObserverOptions,
   LongTasksObserverOptions,
@@ -39,18 +42,21 @@ export class PerfObserverKit {
     resourceTiming: Required<ResourceTimingOptions>;
     longTasks: LongTasksOptions;
     navigationTiming: NavigationTimingOptions;
+    browserInfo: BrowserInfoOptions;
   };
   
   private coreWebVitalsObserver: CoreWebVitalsObserver | null = null;
   private resourceTimingObserver: ResourceTimingObserver | null = null;
   private longTasksObserver: LongTasksObserver | null = null;
   private navigationTimingObserver: NavigationTimingObserver | null = null;
+  private browserInfoObserver: BrowserInfoObserver | null = null;
   
   private metrics: PerformanceMetrics = {
     coreWebVitals: {},
     resources: [],
     longTasks: [],
-    navigation: {}
+    navigation: {},
+    browserInfo: {}
   };
   
   private isRunning = false;
@@ -80,7 +86,10 @@ export class PerfObserverKit {
       longTasks: this.normalizeModuleOptions(options.longTasks, true),
       
       // 导航计时配置
-      navigationTiming: this.normalizeModuleOptions(options.navigationTiming, true)
+      navigationTiming: this.normalizeModuleOptions(options.navigationTiming, true),
+      
+      // 浏览器信息配置
+      browserInfo: this.normalizeModuleOptions(options.browserInfo, true)
     };
     
     // 初始化日志系统
@@ -140,6 +149,8 @@ export class PerfObserverKit {
     if (options.enableNavigationTiming !== undefined && options.navigationTiming === undefined) {
       options.navigationTiming = options.enableNavigationTiming;
     }
+    
+    // 浏览器信息没有旧的配置选项
   }
   
   /**
@@ -230,6 +241,10 @@ export class PerfObserverKit {
       this.startNavigationTimingMonitoring();
     }
     
+    if (this.options.browserInfo.enabled) {
+      this.startBrowserInfoMonitoring();
+    }
+    
     this.isRunning = true;
     logger.debug('所有启用的性能监控模块已启动');
   }
@@ -265,6 +280,11 @@ export class PerfObserverKit {
       this.navigationTimingObserver = null;
     }
     
+    if (this.browserInfoObserver) {
+      this.browserInfoObserver.stop();
+      this.browserInfoObserver = null;
+    }
+    
     this.isRunning = false;
     logger.debug('所有性能监控模块已停止');
   }
@@ -285,7 +305,8 @@ export class PerfObserverKit {
       coreWebVitals: {},
       resources: [],
       longTasks: [],
-      navigation: {}
+      navigation: {},
+      browserInfo: {}
     };
   }
   
@@ -446,6 +467,31 @@ export class PerfObserverKit {
       logger.debug('导航计时监控已启动');
     } catch (error) {
       logger.error('启动导航计时监控失败:', error);
+    }
+  }
+  
+  /**
+   * 开始监控浏览器信息
+   */
+  private startBrowserInfoMonitoring(): void {
+    try {
+      const options = this.options.browserInfo;
+      
+      this.browserInfoObserver = new BrowserInfoObserver({
+        onUpdate: (browserInfo: BrowserInfo) => {
+          this.metrics.browserInfo = browserInfo;
+          this.notifyMetricsUpdate();
+        },
+        enabled: options.enabled,
+        trackResize: options.trackResize,
+        includeOSDetails: options.includeOSDetails,
+        includeSizeInfo: options.includeSizeInfo
+      });
+      
+      this.browserInfoObserver.start();
+      logger.debug('浏览器信息监控已启动');
+    } catch (error) {
+      logger.error('启动浏览器信息监控失败:', error);
     }
   }
   

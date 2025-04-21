@@ -44,6 +44,7 @@ export class LCPObserver extends BaseObserver {
             value: lcpValue,
             unit: 'ms',
             timestamp: performance.now(),
+            url: typeof window !== 'undefined' ? window.location.href : undefined,
             // 添加网络信息作为附加上下文
             context: this.getNetworkContext({
               elementId: (lastEntry as any).element ? (lastEntry as any).element.id || null : null,
@@ -113,6 +114,7 @@ export class LCPObserver extends BaseObserver {
       value: timeFromRestore,
       unit: 'ms',
       timestamp: currentTime,
+      url: typeof window !== 'undefined' ? window.location.href : undefined,
       // 添加网络信息作为附加上下文
       context: this.getNetworkContext({
         bfcacheRestore: true,

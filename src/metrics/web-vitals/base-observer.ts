@@ -159,9 +159,13 @@ export abstract class BaseObserver {
    * @returns 完整的上下文数据
    */
   protected getNetworkContext(extraContext: Record<string, any> = {}): Record<string, any> {
+    // 获取当前页面URL
+    const currentUrl = typeof window !== 'undefined' ? window.location.href : undefined;
+    
     return NetworkMetricsCollector.getNetworkContext({
       ...extraContext,
-      userHasInteracted: this.userHasInteracted
+      userHasInteracted: this.userHasInteracted,
+      url: currentUrl
     });
   }
   

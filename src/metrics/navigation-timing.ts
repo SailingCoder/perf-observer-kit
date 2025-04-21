@@ -1,6 +1,7 @@
 import { MetricData, NavigationMetrics } from '../types';
 import { calculateTime } from '../utils/time';
 import { NetworkMetricsCollector } from '../utils/network-metrics';
+import { BrowserInfoCollector } from '../utils/browser-info';
 import { NavigationTimingObserverOptions } from './web-vitals/types';
 
 /**
@@ -129,82 +130,37 @@ export class NavigationTimingObserver {
    * 处理导航性能条目
    */
   private processNavigationEntry(entry: PerformanceNavigationTiming): void {
-    const now = performance.now();
-    
-    // 网络连接阶段
-    const dnsLookup = this.createMetric(
-      'DNSLookup',
-      calculateTime(entry.domainLookupEnd, entry.domainLookupStart) || 0,
-      now
-    );
-    
-    const tcpConnection = this.createMetric(
-      'TCPConnection',
-      calculateTime(entry.connectEnd, entry.connectStart) || 0,
-      now
-    );
-    
-    // SSL/TLS握手时间
-    const sslTime = entry.secureConnectionStart > 0 ?
-      this.createMetric(
-        'SSLNegotiation',
-        calculateTime(entry.connectEnd, entry.secureConnectionStart) || 0,
-        now
-      ) : undefined;
-    
-    // 请求/响应阶段
-    const ttfb = this.createMetric(
-      'TTFB',
-      calculateTime(entry.responseStart, entry.requestStart) || 0,
-      now,
-      [100, 200] // TTFB评级阈值
-    );
-    
-    const requestTime = this.createMetric(
-      'Request',
-      calculateTime(entry.responseStart, entry.fetchStart) || 0,
-      now
-    );
-    
-    const responseTime = this.createMetric(
-      'Response',
-      calculateTime(entry.responseEnd, entry.responseStart) || 0,
-      now
-    );
-    
-    // 文档处理阶段
-    const domProcessing = this.createMetric(
-      'DOMProcessing',
-      calculateTime(entry.domComplete, entry.domInteractive) || 0,
-      now
-    );
-    
-    const domContentLoaded = this.createMetric(
-      'DOMContentLoaded',
-      calculateTime(entry.domContentLoadedEventEnd, entry.startTime) || 0,
-      now
-    );
-    
-    const loadEvent = this.createMetric(
-      'Load',
-      calculateTime(entry.loadEventEnd, entry.startTime) || 0,
-      now
-    );
+    // 计算各个时间段
+    const dnsLookupTime = calculateTime(entry.domainLookupEnd, entry.domainLookupStart) || 0;
+    const tcpConnectionTime = calculateTime(entry.connectEnd, entry.connectStart) || 0;
+    const sslNegotiationTime = entry.secureConnectionStart > 0 
+      ? calculateTime(entry.connectEnd, entry.secureConnectionStart) || 0 
+      : 0;
+    const ttfbTime = calculateTime(entry.responseStart, entry.requestStart) || 0;
+    const requestTime = calculateTime(entry.responseStart, entry.fetchStart) || 0;
+    const responseTime = calculateTime(entry.responseEnd, entry.responseStart) || 0;
+    const domProcessingTime = calculateTime(entry.domComplete, entry.domInteractive) || 0;
+    const domContentLoadedTime = calculateTime(entry.domContentLoadedEventEnd, entry.startTime) || 0;
+    const loadTime = calculateTime(entry.loadEventEnd, entry.startTime) || 0;
     
     // 获取网络信息
     const networkInfo = NetworkMetricsCollector.getNetworkInformation();
     
-    // 整合所有指标
+    // 获取当前页面URL
+    const pageUrl = typeof window !== 'undefined' ? window.location.href : entry.name;
+    
+    // 整合所有指标，直接使用数值
     this.metrics = {
-      ttfb,
-      domContentLoaded,
-      loadEvent,
-      dnsTime: dnsLookup,
-      tcpTime: tcpConnection,
-      sslTime,
-      requestTime,
-      responseTime,
-      processingTime: domProcessing,
+      ttfb: ttfbTime,
+      domContentLoaded: domContentLoadedTime,
+      loadEvent: loadTime,
+      processingTime: domProcessingTime,
+      dnsTime: dnsLookupTime,
+      tcpTime: tcpConnectionTime,
+      sslTime: sslNegotiationTime > 0 ? sslNegotiationTime : undefined,
+      requestTime: requestTime,
+      responseTime: responseTime,
+      url: pageUrl,
       networkInfo
     };
     

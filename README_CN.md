@@ -8,6 +8,7 @@
 - 🔄 资源加载性能跟踪
 - ⏱️ 长任务检测
 - 🧭 导航计时详细分析
+- 💻 浏览器和设备信息收集
 - 📱 响应式设计，适用于移动和桌面环境
 - 🌐 支持单页应用 (SPA) 和传统网站
 - 🔍 支持 BFCache 恢复场景的性能监控
@@ -94,6 +95,14 @@ const perfMonitor = new PerfObserverKit({
   navigationTiming: {
     enabled: true,          // 是否启用导航计时监控
     includeRawTiming: false // 是否包含原始计时数据
+  },
+  
+  // 浏览器信息配置
+  browserInfo: {
+    enabled: true,          // 是否启用浏览器信息收集
+    trackResize: true,      // 窗口大小改变时是否更新信息
+    includeOSDetails: true, // 是否包含详细的操作系统信息
+    includeSizeInfo: true   // 是否包含屏幕和窗口尺寸信息
   }
 });
 ```
@@ -189,6 +198,58 @@ PerfObserverKit 根据页面可见性状态智能处理性能指标：
 2. 用户交互跟踪：
    - 在第一次点击或按键后，LCP 监控将停止（符合 Web Vitals 标准）
    - 交互状态会在性能数据中标记，便于分析
+
+## 浏览器和设备信息收集
+
+PerfObserverKit 提供了浏览器和设备信息收集功能，帮助您了解用户环境对性能的影响。
+
+### 收集的信息类型
+
+- **浏览器信息**：名称、版本、厂商
+- **操作系统**：名称、版本
+- **屏幕和窗口尺寸**：宽度、高度
+- **设备像素比**：用于高DPI屏幕
+- **当前页面URL**：完整URL地址
+- **语言和平台**：用户语言偏好和平台信息
+
+### 使用方式
+
+```javascript
+// 获取浏览器和设备信息
+const browserInfo = perfMonitor.getMetrics().browserInfo;
+
+// 检查不同的浏览器类型
+if (browserInfo.browser.name === 'Chrome') {
+  // Chrome特定的处理逻辑
+}
+
+// 根据操作系统调整性能优化
+if (browserInfo.os.name === 'iOS') {
+  // iOS设备优化
+}
+
+// 根据屏幕尺寸优化
+if (browserInfo.screenSize.width < 768) {
+  // 移动设备优化
+}
+```
+
+### 实时更新
+
+启用 `trackResize` 选项后，浏览器信息会在窗口大小变化时自动更新，使您能够跟踪用户调整窗口大小时的性能影响。
+
+```javascript
+const perfMonitor = new PerfObserverKit({
+  browserInfo: {
+    enabled: true,
+    trackResize: true  // 窗口大小变化时更新信息
+  },
+  onMetrics: function(metrics) {
+    // 窗口大小变化时会触发此回调，包含最新的浏览器信息
+    console.log('当前窗口尺寸:', metrics.browserInfo.windowSize);
+  }
+});
+```
 
 ## 自定义和扩展
 
@@ -373,3 +434,34 @@ const customLogger = createLogger({
 ## 许可证
 
 MIT
+
+## 获取性能指标
+
+```javascript
+// 随时获取当前的性能指标
+const metrics = perfMonitor.getMetrics();
+
+// 核心Web指标
+console.log(metrics.coreWebVitals.fcp);  // 首次内容绘制
+console.log(metrics.coreWebVitals.lcp);  // 最大内容绘制
+console.log(metrics.coreWebVitals.fid);  // 首次输入延迟
+console.log(metrics.coreWebVitals.cls);  // 累积布局偏移
+console.log(metrics.coreWebVitals.inp);  // 交互到下一次绘制
+
+// 资源加载指标
+console.log(metrics.resources);          // 资源加载指标数组
+
+// 长任务指标
+console.log(metrics.longTasks);          // 长任务指标数组
+
+// 导航计时指标
+console.log(metrics.navigation.ttfb);    // 首字节时间
+console.log(metrics.navigation.domContentLoaded); // DOM内容加载完成时间
+
+// 浏览器信息
+console.log(metrics.browserInfo);        // 浏览器和设备信息
+console.log(metrics.browserInfo.browser); // 浏览器名称和版本
+console.log(metrics.browserInfo.os);     // 操作系统详细信息
+console.log(metrics.browserInfo.screenSize); // 屏幕尺寸
+console.log(metrics.browserInfo.windowSize); // 窗口尺寸
+```

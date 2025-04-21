@@ -5,6 +5,7 @@ export interface MetricData {
   value: number; // 指标值
   unit: string; // 值的单位 (ms, %, 等)
   timestamp: number; // 记录时的时间戳
+  url?: string; // 发生指标的页面URL
   rating?: MetricRating; // 可选的性能评级
   context?: Record<string, any>; // 其他上下文信息
 }
@@ -63,6 +64,14 @@ export interface NavigationTimingOptions {
   includeRawTiming?: boolean; // 是否包含原始计时数据
 }
 
+// 浏览器信息观察者选项
+export interface BrowserInfoOptions {
+  enabled?: boolean; // 是否启用
+  trackResize?: boolean; // 是否在窗口大小变化时重新收集
+  includeOSDetails?: boolean; // 是否包含详细的操作系统信息
+  includeSizeInfo?: boolean; // 是否包含屏幕和窗口尺寸信息
+}
+
 export interface CoreWebVitalsMetrics {
   fcp?: MetricData; // 首次内容绘制
   lcp?: MetricData; // 最大内容绘制
@@ -72,7 +81,7 @@ export interface CoreWebVitalsMetrics {
 }
 
 export interface ResourceMetrics {
-  name: string; // 资源名称
+  name: string; // 资源URL地址
   initiatorType: string; // 资源发起者类型
   startTime: number; // 资源开始时间
   duration: number; // 资源加载时间
@@ -102,15 +111,16 @@ export interface LongTaskMetrics {
 }
 
 export interface NavigationMetrics {
-  ttfb?: MetricData; // 首字节时间
-  domContentLoaded?: MetricData; // 文档加载完成时间      
-  loadEvent?: MetricData; // 页面加载完成时间
-  processingTime?: MetricData; // DOM处理时间
-  dnsTime?: MetricData; // DNS解析时间
-  tcpTime?: MetricData; // TCP连接时间
-  sslTime?: MetricData; // SSL/TLS握手时间
-  requestTime?: MetricData; // 请求发送时间
-  responseTime?: MetricData; // 响应接收时间
+  ttfb?: number; // 首字节时间
+  domContentLoaded?: number; // 文档加载完成时间      
+  loadEvent?: number; // 页面加载完成时间
+  processingTime?: number; // DOM处理时间
+  dnsTime?: number; // DNS解析时间
+  tcpTime?: number; // TCP连接时间
+  sslTime?: number; // SSL/TLS握手时间
+  requestTime?: number; // 请求发送时间
+  responseTime?: number; // 响应接收时间
+  url?: string; // 页面URL地址
   networkInfo?: {
     downlink?: number; // 下行速度 (Mbps)
     effectiveType?: string; // 网络类型 (4g, 3g等)
@@ -120,11 +130,38 @@ export interface NavigationMetrics {
   rawTiming?: Record<string, any>; // 原始性能数据
 }
 
+export interface BrowserInfo {
+  userAgent?: string; // 浏览器用户代理
+  language?: string; // 浏览器语言
+  platform?: string; // 操作系统平台
+  vendor?: string; // 浏览器厂商
+  url?: string; // 当前页面URL
+  screenSize?: {
+    width: number;
+    height: number;
+  }; // 屏幕尺寸
+  windowSize?: {
+    width: number; 
+    height: number;
+  }; // 窗口尺寸
+  devicePixelRatio?: number; // 设备像素比
+  cookiesEnabled?: boolean; // 是否启用cookie
+  browser?: {
+    name: string; // 浏览器名称
+    version: string; // 浏览器版本
+  }; // 浏览器详细信息
+  os?: {
+    name: string; // 操作系统名称
+    version: string; // 操作系统版本
+  }; // 操作系统详细信息
+}
+
 export interface PerformanceMetrics {
   coreWebVitals: CoreWebVitalsMetrics; // 核心Web性能指标
   resources: ResourceMetrics[]; // 资源加载性能指标
   longTasks: LongTaskMetrics[]; // 长任务性能指标
   navigation: NavigationMetrics; // 导航性能指标
+  browserInfo: BrowserInfo; // 浏览器和设备信息
 }
 
 /**
@@ -151,6 +188,9 @@ export interface PerfObserverOptions extends GlobalOptions {
   
   /** 导航计时配置 */
   navigationTiming?: boolean | NavigationTimingOptions;
+  
+  /** 浏览器信息配置 */
+  browserInfo?: boolean | BrowserInfoOptions;
   
   // 向后兼容的旧选项
   /** @deprecated 使用 coreWebVitals 替代 */
