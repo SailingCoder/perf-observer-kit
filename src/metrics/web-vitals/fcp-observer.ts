@@ -28,6 +28,8 @@ export class FCPObserver extends BaseObserver {
               value: entry.startTime,
               unit: 'ms',
               timestamp: performance.now(),
+              // 添加网络信息作为上下文
+              context: this.getNetworkContext()
             };
             
             // FCP评级阈值

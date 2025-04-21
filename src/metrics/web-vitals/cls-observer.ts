@@ -1,10 +1,11 @@
 import { MetricData } from '../../types';
 import { ObserverOptions, LayoutShift } from './types';
 import { BaseObserver } from './base-observer';
+import { logger } from '../../utils/logger';
 
 /**
  * Cumulative Layout Shift (CLS) 观察者
- * 负责测量页面累积布局偏移量
+ * 负责测量页面布局稳定性
  */
 export class CLSObserver extends BaseObserver {
   private clsObserver: PerformanceObserver | null = null;
@@ -36,7 +37,13 @@ export class CLSObserver extends BaseObserver {
               const cls: MetricData = {
                 name: 'CLS',
                 value: this.sessionValue,
+                unit: '', // CLS没有单位，是无量纲数值
                 timestamp: performance.now(),
+                // 添加网络信息和其他上下文
+                context: this.getNetworkContext({
+                  shiftCount: this.sessionEntries.length,
+                  largestShift: Math.max(...this.sessionEntries.map((e) => (e as LayoutShift).value))
+                })
               };
               
               // CLS rating thresholds
@@ -58,7 +65,7 @@ export class CLSObserver extends BaseObserver {
       
       this.clsObserver.observe({ type: 'layout-shift', buffered: true });
     } catch (error) {
-      console.error('CLS monitoring not supported', error);
+      logger.error('CLS监控不受支持', error);
     }
   }
   
@@ -84,7 +91,7 @@ export class CLSObserver extends BaseObserver {
     this.sessionEntries = [];
     this.prevSessionValue = 0;
     
-    console.log('CLS值已在bfcache恢复后重置');
+    logger.info('CLS值已在bfcache恢复后重置');
     
     // 重新开始CLS监测
     if (this.clsObserver) {

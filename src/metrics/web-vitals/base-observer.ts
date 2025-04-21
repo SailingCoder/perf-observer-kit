@@ -3,8 +3,12 @@ import {
   ObserverOptions, 
   VisibilityChangeHandler, 
   UserInteractionHandler, 
-  PageshowHandler 
+  PageshowHandler,
+  NetworkInformation
 } from './types';
+import { NetworkMetricsCollector } from '../../utils/network-metrics';
+import { calculateTimeDelta } from '../../utils/time';
+import { logger } from '../../utils/logger';
 
 /**
  * 基础观察者类
@@ -89,7 +93,7 @@ export abstract class BaseObserver {
       const wasVisible = this.isPageVisible;
       this.isPageVisible = document.visibilityState === 'visible';
       
-      console.log('页面可见性变化:', this.isPageVisible ? '可见' : '隐藏');
+      logger.debug('页面可见性变化:', this.isPageVisible ? '可见' : '隐藏');
     };
     
     document.addEventListener('visibilitychange', this.visibilityChangeHandler);
@@ -109,7 +113,7 @@ export abstract class BaseObserver {
       }
       
       this.userHasInteracted = true;
-      console.log('用户已交互');
+      logger.debug('用户已交互');
     };
     
     // 监听点击和键盘事件
@@ -128,7 +132,7 @@ export abstract class BaseObserver {
     this.pageshowHandler = (event: PageTransitionEvent) => {
       // 只有当页面是从bfcache恢复时才处理
       if (event.persisted) {
-        console.log('页面从bfcache恢复');
+        logger.info('页面从bfcache恢复');
         
         // 重置用户交互状态
         this.userHasInteracted = false;
@@ -139,6 +143,36 @@ export abstract class BaseObserver {
     };
     
     window.addEventListener('pageshow', this.pageshowHandler);
+  }
+  
+  /**
+   * 获取网络状态信息
+   * @returns 网络信息对象
+   */
+  protected getNetworkInformation(): NetworkInformation | undefined {
+    return NetworkMetricsCollector.getNetworkInformation();
+  }
+  
+  /**
+   * 获取完整的网络上下文
+   * @param extraContext 额外的上下文信息
+   * @returns 完整的上下文数据
+   */
+  protected getNetworkContext(extraContext: Record<string, any> = {}): Record<string, any> {
+    return NetworkMetricsCollector.getNetworkContext({
+      ...extraContext,
+      userHasInteracted: this.userHasInteracted
+    });
+  }
+  
+  /**
+   * 计算两个时间点之间的差值，确保结果为非负
+   * @param end 结束时间点
+   * @param start 开始时间点
+   * @returns 非负的时间差值
+   */
+  protected calculateTimeDelta(end: number, start: number): number {
+    return calculateTimeDelta(end, start);
   }
   
   /**

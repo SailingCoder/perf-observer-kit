@@ -1,6 +1,7 @@
 import { MetricData } from '../../types';
 import { ObserverOptions } from './types';
 import { BaseObserver } from './base-observer';
+import { logger } from '../../utils/logger';
 
 /**
  * Largest Contentful Paint (LCP) 观察者
@@ -35,11 +36,21 @@ export class LCPObserver extends BaseObserver {
         const lastEntry = entries[entries.length - 1];
         
         if (lastEntry) {
+          // 获取绘制时间
+          const lcpValue = lastEntry.startTime;
+          
           const lcp: MetricData = {
             name: 'LCP',
-            value: lastEntry.startTime,
+            value: lcpValue,
             unit: 'ms',
             timestamp: performance.now(),
+            // 添加网络信息作为附加上下文
+            context: this.getNetworkContext({
+              elementId: (lastEntry as any).element ? (lastEntry as any).element.id || null : null,
+              elementTagName: (lastEntry as any).element ? (lastEntry as any).element.tagName || null : null,
+              elementType: (lastEntry as any).element ? (lastEntry as any).element.type || null : null,
+              size: (lastEntry as any).size || 0
+            })
           };
           
           // LCP rating thresholds (ms)
@@ -55,7 +66,7 @@ export class LCPObserver extends BaseObserver {
           
           // 如果用户已交互，那么在这个LCP事件后停止监听
           if (this.userHasInteracted && this.lcpObserver) {
-            console.log('用户已交互且收到LCP事件，停止LCP监听');
+            logger.debug('用户已交互且收到LCP事件，停止LCP监听');
             this.lcpObserver.disconnect();
             this.lcpObserver = null;
           }
@@ -64,7 +75,7 @@ export class LCPObserver extends BaseObserver {
       
       this.lcpObserver.observe({ type: 'largest-contentful-paint', buffered: true });
     } catch (error) {
-      console.error('LCP monitoring not supported', error);
+      logger.error('LCP监控不受支持', error);
     }
   }
   
@@ -102,6 +113,11 @@ export class LCPObserver extends BaseObserver {
       value: timeFromRestore,
       unit: 'ms',
       timestamp: currentTime,
+      // 添加网络信息作为附加上下文
+      context: this.getNetworkContext({
+        bfcacheRestore: true,
+        restoreTime: restoreTime
+      })
     };
     
     // LCP rating thresholds (ms)
@@ -113,7 +129,7 @@ export class LCPObserver extends BaseObserver {
       lcp.rating = 'poor';
     }
     
-    console.log(`从bfcache恢复到现在的时间: ${timeFromRestore}ms，作为新的LCP值`);
+    logger.info(`从bfcache恢复到现在的时间: ${timeFromRestore}ms，作为新的LCP值`);
     
     this.onUpdate(lcp);
     

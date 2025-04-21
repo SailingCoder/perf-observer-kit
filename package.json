@@ -12,7 +12,6 @@
     "start": "npx http-server -o quick-test.html",
     "build": "node build.js",
     "dev": "tsc --watch",
-    "test": "jest",
     "lint": "eslint src --ext .ts"
   },
   "keywords": [
@@ -28,13 +27,10 @@
     "@rollup/plugin-commonjs": "^24.1.0",
     "@rollup/plugin-node-resolve": "^15.3.1",
     "@rollup/plugin-typescript": "^8.5.0",
-    "@types/jest": "^29.5.0",
     "@typescript-eslint/eslint-plugin": "^5.57.0",
     "@typescript-eslint/parser": "^5.57.0",
     "eslint": "^8.37.0",
-    "jest": "^29.5.0",
     "rollup": "^2.79.1",
-    "ts-jest": "^29.1.0",
     "tslib": "^2.8.1",
     "typescript": "^5.8.3"
   }

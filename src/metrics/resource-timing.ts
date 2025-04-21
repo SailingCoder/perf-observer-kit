@@ -1,8 +1,10 @@
 import { ResourceMetrics } from '../types';
+import { NetworkMetricsCollector } from '../utils/network-metrics';
+import { calculateTimeDelta } from '../utils/time';
 
 /**
- * Observer for resource timing metrics
- * 监控资源加载性能指标
+ * 资源计时观察者
+ * 监控并收集页面资源加载性能指标
  */
 export class ResourceTimingObserver {
   private observer: PerformanceObserver | null = null;
@@ -11,6 +13,12 @@ export class ResourceTimingObserver {
   private excludedPatterns: (string | RegExp)[] = [];
   private allowedResourceTypes: string[] = ['script', 'link', 'img', 'css', 'font'];
   
+  /**
+   * 创建资源计时观察者实例
+   * @param onUpdate 当收集到新资源时的回调函数
+   * @param excludedPatterns 要排除的资源URL模式
+   * @param allowedResourceTypes 允许监控的资源类型
+   */
   constructor(
     onUpdate: (resources: ResourceMetrics[]) => void, 
     excludedPatterns: (string | RegExp)[] = [],
@@ -19,68 +27,115 @@ export class ResourceTimingObserver {
     this.onUpdate = onUpdate;
     this.excludedPatterns = excludedPatterns;
     
-    // 如果提供了自定义资源类型，则使用它
-    if (allowedResourceTypes && allowedResourceTypes.length > 0) {
+    if (allowedResourceTypes?.length) {
       this.allowedResourceTypes = allowedResourceTypes;
     }
   }
   
-  start(): void {
+  /**
+   * 开始监控资源加载性能
+   */
+  public start(): void {
+    if (typeof PerformanceObserver === 'undefined') {
+      console.warn('PerformanceObserver API不可用，无法监控资源加载性能');
+      return;
+    }
+
     try {
-      this.observer = new PerformanceObserver((entryList) => {
-        const entries = entryList.getEntries();
-        
-        for (const entry of entries) {
-          if (entry.entryType === 'resource') {
-            const resourceEntry = entry as PerformanceResourceTiming;
-            // 静态资源过滤
-            if (!this.allowedResourceTypes.includes(resourceEntry.initiatorType)) {
-              continue;
-            }
-
-            // 检查是否在排除列表中
-            if (this.isExcluded(resourceEntry.name)) {
-              console.log('Resource excluded from monitoring:', resourceEntry.name);
-              continue;
-            }
-
-            // 避免重复条目
-            const existingEntryIndex = this.resources.findIndex(
-              r => r.name === resourceEntry.name && r.startTime === resourceEntry.startTime
-            );
-            
-            if (existingEntryIndex >= 0) {
-              continue;
-            }
-            
-            console.log('resourceEntry', resourceEntry);
-            const resource: ResourceMetrics = {
-              name: resourceEntry.name,
-              initiatorType: resourceEntry.initiatorType,
-              startTime: resourceEntry.startTime,
-              duration: resourceEntry.duration,
-              transferSize: resourceEntry.transferSize,
-              decodedBodySize: resourceEntry.decodedBodySize,
-              responseEnd: resourceEntry.responseEnd
-            };
-            
-            this.resources.push(resource);
-          }
-        }
-        
-        this.onUpdate(this.resources);
-      });
-      
+      this.observer = new PerformanceObserver(this.handleEntries.bind(this));
       this.observer.observe({ type: 'resource', buffered: true });
     } catch (error) {
-      console.error('Resource timing monitoring not supported', error);
+      console.error('资源计时监控不支持', error);
     }
+  }
+
+  /**
+   * 处理性能观察者捕获的条目
+   */
+  private handleEntries(entryList: PerformanceObserverEntryList): void {
+    const entries = entryList.getEntries();
+    let hasNewEntries = false;
+    
+    for (const entry of entries) {
+      if (entry.entryType !== 'resource') continue;
+      
+      const resourceEntry = entry as PerformanceResourceTiming;
+      
+      // 应用过滤逻辑
+      if (!this.shouldProcessEntry(resourceEntry)) continue;
+      
+      // 构建资源指标并添加到集合
+      const resourceMetric = this.buildResourceMetric(resourceEntry);
+      this.resources.push(resourceMetric);
+      hasNewEntries = true;
+    }
+    
+    // 只有在有新条目时才触发更新
+    if (hasNewEntries) {
+      this.onUpdate(this.resources);
+    }
+  }
+
+  /**
+   * 判断是否应该处理资源条目
+   */
+  private shouldProcessEntry(resourceEntry: PerformanceResourceTiming): boolean {
+    // 检查资源类型是否允许监控
+    if (!this.allowedResourceTypes.includes(resourceEntry.initiatorType)) {
+      return false;
+    }
+
+    // 检查是否在排除列表中
+    if (this.isExcluded(resourceEntry.name)) {
+      return false;
+    }
+
+    // 检查是否为重复条目
+    const isDuplicate = this.resources.some(
+      r => r.name === resourceEntry.name && r.startTime === resourceEntry.startTime
+    );
+    
+    return !isDuplicate;
+  }
+
+  /**
+   * 从资源条目构建资源指标对象
+   */
+  private buildResourceMetric(resourceEntry: PerformanceResourceTiming): ResourceMetrics {
+    // 计算时间指标
+    const dnsTime = calculateTimeDelta(resourceEntry.domainLookupEnd, resourceEntry.domainLookupStart);
+    const tcpTime = calculateTimeDelta(resourceEntry.connectEnd, resourceEntry.connectStart);
+    const sslTime = resourceEntry.secureConnectionStart > 0 
+      ? calculateTimeDelta(resourceEntry.connectEnd, resourceEntry.secureConnectionStart) 
+      : 0;
+    const ttfb = calculateTimeDelta(resourceEntry.responseStart, resourceEntry.requestStart);
+    const requestTime = calculateTimeDelta(resourceEntry.responseStart, resourceEntry.fetchStart);
+    const responseTime = calculateTimeDelta(resourceEntry.responseEnd, resourceEntry.responseStart);
+    
+    // 获取网络信息
+    const networkMetrics = NetworkMetricsCollector.getNetworkInformation();
+    
+    return {
+      name: resourceEntry.name,
+      initiatorType: resourceEntry.initiatorType,
+      startTime: resourceEntry.startTime,
+      duration: resourceEntry.duration,
+      transferSize: resourceEntry.transferSize,
+      decodedBodySize: resourceEntry.decodedBodySize,
+      encodedSize: resourceEntry.encodedBodySize || undefined,
+      responseEnd: resourceEntry.responseEnd,
+      ttfb,
+      dnsTime,
+      tcpTime,
+      sslTime,
+      requestTime,
+      responseTime,
+      networkMetrics
+    };
   }
   
   /**
    * 检查资源URL是否应被排除
-   * @param url 资源URL
-   * @returns 如果应该排除则返回true
    */
   private isExcluded(url: string): boolean {
     if (!this.excludedPatterns.length) {
@@ -95,19 +150,32 @@ export class ResourceTimingObserver {
     });
   }
   
-  stop(): void {
+  /**
+   * 停止资源性能监控
+   */
+  public stop(): void {
     if (this.observer) {
       this.observer.disconnect();
       this.observer = null;
     }
   }
   
-  getResources(): ResourceMetrics[] {
+  /**
+   * 获取收集到的资源性能指标
+   */
+  public getResources(): ResourceMetrics[] {
     return this.resources;
   }
   
-  clearResources(): void {
+  /**
+   * 清除已收集的资源性能指标
+   */
+  public clearResources(): void {
     this.resources = [];
-    performance.clearResourceTimings();
+    
+    if (typeof performance !== 'undefined' && 
+        typeof performance.clearResourceTimings === 'function') {
+      performance.clearResourceTimings();
+    }
   }
 } 

@@ -6,6 +6,7 @@ import {
   CLSObserver,
   INPObserver
 } from './web-vitals/index';
+import { CoreWebVitalsObserverOptions } from './web-vitals/types';
 
 /**
  * 核心Web指标观察者
@@ -14,6 +15,7 @@ import {
 export class CoreWebVitalsObserver {
   private metrics: CoreWebVitalsMetrics = {};
   private onUpdate: (metrics: CoreWebVitalsMetrics) => void;
+  private options: CoreWebVitalsObserverOptions;
   
   // 各个指标的观察者
   private fcpObserver: FCPObserver | null = null;
@@ -22,23 +24,51 @@ export class CoreWebVitalsObserver {
   private clsObserver: CLSObserver | null = null;
   private inpObserver: INPObserver | null = null;
 
-  constructor(onUpdate: (metrics: CoreWebVitalsMetrics) => void) {
-    this.onUpdate = onUpdate;
+  constructor(options: CoreWebVitalsObserverOptions) {
+    this.onUpdate = options.onUpdate;
+    this.options = {
+      enabled: options.enabled !== undefined ? options.enabled : true,
+      includeFCP: options.includeFCP !== undefined ? options.includeFCP : true,
+      includeLCP: options.includeLCP !== undefined ? options.includeLCP : true,
+      includeFID: options.includeFID !== undefined ? options.includeFID : true,
+      includeCLS: options.includeCLS !== undefined ? options.includeCLS : true,
+      includeINP: options.includeINP !== undefined ? options.includeINP : true,
+      ...options
+    };
   }
-
+  
   /**
-   * 启动所有指标的监测
+   * 开始监控所有核心Web指标
    */
   start(): void {
-    this.startFCPMonitoring();
-    this.startLCPMonitoring();
-    this.startFIDMonitoring();
-    this.startCLSMonitoring();
-    this.startINPMonitoring();
+    // 启动FCP监测
+    if (this.options.includeFCP) {
+      this.startFCPMonitoring();
+    }
+    
+    // 启动LCP监测
+    if (this.options.includeLCP) {
+      this.startLCPMonitoring();
+    }
+    
+    // 启动FID监测
+    if (this.options.includeFID) {
+      this.startFIDMonitoring();
+    }
+    
+    // 启动CLS监测
+    if (this.options.includeCLS) {
+      this.startCLSMonitoring();
+    }
+    
+    // 启动INP监测
+    if (this.options.includeINP) {
+      this.startINPMonitoring();
+    }
   }
-
+  
   /**
-   * 停止所有指标的监测
+   * 停止所有监控
    */
   stop(): void {
     if (this.fcpObserver) {
@@ -66,12 +96,12 @@ export class CoreWebVitalsObserver {
       this.inpObserver = null;
     }
   }
-
+  
   /**
-   * 获取当前指标数据
+   * 发送指标更新通知
    */
-  getMetrics(): CoreWebVitalsMetrics {
-    return this.metrics;
+  private notifyMetricsUpdate(): void {
+    this.onUpdate(this.metrics);
   }
 
   /**
@@ -142,12 +172,5 @@ export class CoreWebVitalsObserver {
     });
     
     this.inpObserver.start();
-  }
-  
-  /**
-   * 通知指标更新
-   */
-  private notifyMetricsUpdate(): void {
-    this.onUpdate(this.metrics);
   }
 } 

@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Perf Observer Kit - Modular Configuration Example</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      line-height: 1.6;
+      color: #333;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    
+    h1, h2, h3 {
+      color: #0066cc;
+    }
+    
+    pre {
+      background-color: #f5f5f5;
+      padding: 15px;
+      border-radius: 5px;
+      overflow-x: auto;
+    }
+    
+    code {
+      font-family: Consolas, Monaco, 'Andale Mono', monospace;
+    }
+    
+    .metrics-container {
+      margin-top: 20px;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      padding: 15px;
+      background-color: #f9f9f9;
+    }
+    
+    .metric-group {
+      margin-bottom: 15px;
+    }
+    
+    .metric-group h3 {
+      margin-bottom: 10px;
+      border-bottom: 1px solid #eee;
+      padding-bottom: 5px;
+    }
+    
+    .metric-value {
+      margin-bottom: 5px;
+    }
+    
+    .good {
+      color: #4caf50;
+    }
+    
+    .needs-improvement {
+      color: #ff9800;
+    }
+    
+    .poor {
+      color: #f44336;
+    }
+    
+    .switch-container {
+      margin: 20px 0;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    
+    .switch {
+      display: flex;
+      align-items: center;
+    }
+    
+    .switch input {
+      margin-right: 5px;
+    }
+    
+    button {
+      background-color: #0066cc;
+      color: white;
+      border: none;
+      padding: 8px 15px;
+      border-radius: 4px;
+      cursor: pointer;
+      margin-right: 10px;
+    }
+    
+    button:hover {
+      background-color: #0055aa;
+    }
+    
+    .code-block {
+      margin: 20px 0;
+    }
+  </style>
+</head>
+<body>
+  <h1>Perf Observer Kit - Modular Configuration Example</h1>
+  <p>This example demonstrates how to use the modular configuration system in perf-observer-kit.</p>
+  
+  <div class="code-block">
+    <h2>Configuration Code</h2>
+    <pre><code>// Create a performance observer with modular configuration
+const perfMonitor = new PerfObserverKit.PerfObserverKit({
+  onMetrics: (metrics) => {
+    updateMetricsDisplay(metrics);
+    // In a real application, you might send these metrics to your analytics
+  },
+  
+  // Core Web Vitals configuration
+  coreWebVitals: {
+    enabled: true,
+    includeFCP: true,
+    includeLCP: true,
+    includeFID: true,
+    includeCLS: true,
+    includeINP: true
+  },
+  
+  // Resource Timing configuration
+  resourceTiming: {
+    enabled: true,
+    excludedPatterns: [/analytics/, /ads/],
+    allowedTypes: ['script', 'img', 'css', 'fetch'],
+    maxEntries: 50
+  },
+  
+  // Long Tasks configuration
+  longTasks: {
+    enabled: true,
+    threshold: 50,  // ms
+    maxEntries: 10
+  },
+  
+  // Navigation Timing configuration
+  navigationTiming: {
+    enabled: true,
+    includeRawTiming: false
+  }
+});</code></pre>
+  </div>
+  
+  <div class="switch-container">
+    <h2>Configuration Controls</h2>
+    <div>
+      <h3>Core Web Vitals</h3>
+      <div class="switch">
+        <input type="checkbox" id="enableCoreWebVitals" checked>
+        <label for="enableCoreWebVitals">Enable Core Web Vitals</label>
+      </div>
+      <div class="switch">
+        <input type="checkbox" id="includeFCP" checked>
+        <label for="includeFCP">Include FCP</label>
+      </div>
+      <div class="switch">
+        <input type="checkbox" id="includeLCP" checked>
+        <label for="includeLCP">Include LCP</label>
+      </div>
+      <div class="switch">
+        <input type="checkbox" id="includeFID" checked>
+        <label for="includeFID">Include FID</label>
+      </div>
+      <div class="switch">
+        <input type="checkbox" id="includeCLS" checked>
+        <label for="includeCLS">Include CLS</label>
+      </div>
+      <div class="switch">
+        <input type="checkbox" id="includeINP" checked>
+        <label for="includeINP">Include INP</label>
+      </div>
+    </div>
+    
+    <div>
+      <h3>Resource Timing</h3>
+      <div class="switch">
+        <input type="checkbox" id="enableResourceTiming" checked>
+        <label for="enableResourceTiming">Enable Resource Timing</label>
+      </div>
+    </div>
+    
+    <div>
+      <h3>Long Tasks</h3>
+      <div class="switch">
+        <input type="checkbox" id="enableLongTasks" checked>
+        <label for="enableLongTasks">Enable Long Tasks</label>
+      </div>
+      <div>
+        <label for="longTaskThreshold">Threshold (ms):</label>
+        <input type="number" id="longTaskThreshold" value="50" min="10" max="200">
+      </div>
+    </div>
+    
+    <div>
+      <h3>Navigation Timing</h3>
+      <div class="switch">
+        <input type="checkbox" id="enableNavigationTiming" checked>
+        <label for="enableNavigationTiming">Enable Navigation Timing</label>
+      </div>
+      <div class="switch">
+        <input type="checkbox" id="includeRawTiming">
+        <label for="includeRawTiming">Include Raw Timing</label>
+      </div>
+    </div>
+  </div>
+  
+  <div>
+    <button id="startBtn">Start Monitoring</button>
+    <button id="stopBtn" disabled>Stop Monitoring</button>
+    <button id="resetBtn">Reset Metrics</button>
+  </div>
+  
+  <div class="metrics-container">
+    <h2>Collected Metrics</h2>
+    
+    <div class="metric-group">
+      <h3>Core Web Vitals</h3>
+      <div id="coreWebVitalsMetrics">
+        <p>Waiting for metrics...</p>
+      </div>
+    </div>
+    
+    <div class="metric-group">
+      <h3>Resource Timing</h3>
+      <div id="resourceMetrics">
+        <p>Waiting for metrics...</p>
+      </div>
+    </div>
+    
+    <div class="metric-group">
+      <h3>Long Tasks</h3>
+      <div id="longTasksMetrics">
+        <p>Waiting for metrics...</p>
+      </div>
+    </div>
+    
+    <div class="metric-group">
+      <h3>Navigation Timing</h3>
+      <div id="navigationMetrics">
+        <p>Waiting for metrics...</p>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Load the library -->
+  <script src="../dist/perf-observer-kit.browser.js"></script>
+  
+  <script>
+    let perfMonitor = null;
+    
+    function getConfiguration() {
+      return {
+        onMetrics: (metrics) => {
+          updateMetricsDisplay(metrics);
+        },
+        
+        // Core Web Vitals configuration
+        coreWebVitals: {
+          enabled: document.getElementById('enableCoreWebVitals').checked,
+          includeFCP: document.getElementById('includeFCP').checked,
+          includeLCP: document.getElementById('includeLCP').checked,
+          includeFID: document.getElementById('includeFID').checked,
+          includeCLS: document.getElementById('includeCLS').checked,
+          includeINP: document.getElementById('includeINP').checked
+        },
+        
+        // Resource Timing configuration
+        resourceTiming: {
+          enabled: document.getElementById('enableResourceTiming').checked,
+          excludedPatterns: [/analytics/, /ads/],
+          allowedTypes: ['script', 'img', 'css', 'fetch'],
+          maxEntries: 50
+        },
+        
+        // Long Tasks configuration
+        longTasks: {
+          enabled: document.getElementById('enableLongTasks').checked,
+          threshold: parseInt(document.getElementById('longTaskThreshold').value, 10),
+          maxEntries: 10
+        },
+        
+        // Navigation Timing configuration
+        navigationTiming: {
+          enabled: document.getElementById('enableNavigationTiming').checked,
+          includeRawTiming: document.getElementById('includeRawTiming').checked
+        }
+      };
+    }
+    
+    function startMonitoring() {
+      if (perfMonitor) {
+        perfMonitor.stop();
+      }
+      
+      const config = getConfiguration();
+      perfMonitor = new PerfObserverKit.PerfObserverKit(config);
+      perfMonitor.start();
+      
+      document.getElementById('startBtn').disabled = true;
+      document.getElementById('stopBtn').disabled = false;
+      
+      console.log('Performance monitoring started with configuration:', config);
+    }
+    
+    function stopMonitoring() {
+      if (perfMonitor) {
+        perfMonitor.stop();
+        document.getElementById('startBtn').disabled = false;
+        document.getElementById('stopBtn').disabled = true;
+        console.log('Performance monitoring stopped');
+      }
+    }
+    
+    function resetMetrics() {
+      document.getElementById('coreWebVitalsMetrics').innerHTML = '<p>Waiting for metrics...</p>';
+      document.getElementById('resourceMetrics').innerHTML = '<p>Waiting for metrics...</p>';
+      document.getElementById('longTasksMetrics').innerHTML = '<p>Waiting for metrics...</p>';
+      document.getElementById('navigationMetrics').innerHTML = '<p>Waiting for metrics...</p>';
+      console.log('Metrics display reset');
+    }
+    
+    function formatValue(value, unit = 'ms') {
+      if (value === undefined || value === null) return 'Not available';
+      return `${value.toFixed(2)} ${unit}`;
+    }
+    
+    function getRatingClass(rating) {
+      if (!rating) return '';
+      return rating;
+    }
+    
+    function updateMetricsDisplay(metrics) {
+      // Update Core Web Vitals
+      if (metrics.coreWebVitals && document.getElementById('enableCoreWebVitals').checked) {
+        let html = '';
+        
+        if (metrics.coreWebVitals.fcp && document.getElementById('includeFCP').checked) {
+          const fcp = metrics.coreWebVitals.fcp;
+          html += `<div class="metric-value">
+            <strong>FCP:</strong> 
+            <span class="${getRatingClass(fcp.rating)}">${formatValue(fcp.value)}</span>
+            ${fcp.rating ? `(${fcp.rating})` : ''}
+          </div>`;
+        }
+        
+        if (metrics.coreWebVitals.lcp && document.getElementById('includeLCP').checked) {
+          const lcp = metrics.coreWebVitals.lcp;
+          html += `<div class="metric-value">
+            <strong>LCP:</strong> 
+            <span class="${getRatingClass(lcp.rating)}">${formatValue(lcp.value)}</span>
+            ${lcp.rating ? `(${lcp.rating})` : ''}
+          </div>`;
+        }
+        
+        if (metrics.coreWebVitals.fid && document.getElementById('includeFID').checked) {
+          const fid = metrics.coreWebVitals.fid;
+          html += `<div class="metric-value">
+            <strong>FID:</strong> 
+            <span class="${getRatingClass(fid.rating)}">${formatValue(fid.value)}</span>
+            ${fid.rating ? `(${fid.rating})` : ''}
+          </div>`;
+        }
+        
+        if (metrics.coreWebVitals.cls && document.getElementById('includeCLS').checked) {
+          const cls = metrics.coreWebVitals.cls;
+          html += `<div class="metric-value">
+            <strong>CLS:</strong> 
+            <span class="${getRatingClass(cls.rating)}">${formatValue(cls.value, '')}</span>
+            ${cls.rating ? `(${cls.rating})` : ''}
+          </div>`;
+        }
+        
+        if (metrics.coreWebVitals.inp && document.getElementById('includeINP').checked) {
+          const inp = metrics.coreWebVitals.inp;
+          html += `<div class="metric-value">
+            <strong>INP:</strong> 
+            <span class="${getRatingClass(inp.rating)}">${formatValue(inp.value)}</span>
+            ${inp.rating ? `(${inp.rating})` : ''}
+          </div>`;
+        }
+        
+        document.getElementById('coreWebVitalsMetrics').innerHTML = 
+          html || '<p>No Core Web Vitals metrics available yet</p>';
+      }
+      
+      // Update Resource Timing
+      if (metrics.resources && metrics.resources.length > 0 && document.getElementById('enableResourceTiming').checked) {
+        const limitedResources = metrics.resources.slice(0, 5);
+        let html = `<p>Showing 5 of ${metrics.resources.length} resources:</p>`;
+        
+        limitedResources.forEach(resource => {
+          html += `<div class="metric-value">
+            <strong>${resource.initiatorType}:</strong> ${resource.name.split('/').pop()} 
+            (${formatValue(resource.duration)})
+          </div>`;
+        });
+        
+        document.getElementById('resourceMetrics').innerHTML = html;
+      }
+      
+      // Update Long Tasks
+      if (metrics.longTasks && metrics.longTasks.length > 0 && document.getElementById('enableLongTasks').checked) {
+        const limitedTasks = metrics.longTasks.slice(0, 5);
+        let html = `<p>Showing ${limitedTasks.length} of ${metrics.longTasks.length} long tasks:</p>`;
+        
+        limitedTasks.forEach(task => {
+          html += `<div class="metric-value">
+            <strong>Duration:</strong> ${formatValue(task.duration)} 
+            ${task.attribution ? `(${task.attribution})` : ''}
+          </div>`;
+        });
+        
+        document.getElementById('longTasksMetrics').innerHTML = html;
+      }
+      
+      // Update Navigation Timing
+      if (metrics.navigation && document.getElementById('enableNavigationTiming').checked) {
+        let html = '';
+        
+        if (metrics.navigation.ttfb) {
+          const ttfb = metrics.navigation.ttfb;
+          html += `<div class="metric-value">
+            <strong>TTFB:</strong> 
+            <span class="${getRatingClass(ttfb.rating)}">${formatValue(ttfb.value)}</span>
+            ${ttfb.rating ? `(${ttfb.rating})` : ''}
+          </div>`;
+        }
+        
+        if (metrics.navigation.domContentLoaded) {
+          const dcl = metrics.navigation.domContentLoaded;
+          html += `<div class="metric-value">
+            <strong>DOMContentLoaded:</strong> ${formatValue(dcl.value)}
+          </div>`;
+        }
+        
+        if (metrics.navigation.loadEvent) {
+          const load = metrics.navigation.loadEvent;
+          html += `<div class="metric-value">
+            <strong>Load:</strong> ${formatValue(load.value)}
+          </div>`;
+        }
+        
+        document.getElementById('navigationMetrics').innerHTML = 
+          html || '<p>No navigation metrics available yet</p>';
+      }
+    }
+    
+    // Event listeners
+    document.getElementById('startBtn').addEventListener('click', startMonitoring);
+    document.getElementById('stopBtn').addEventListener('click', stopMonitoring);
+    document.getElementById('resetBtn').addEventListener('click', resetMetrics);
+    
+    // Generate some long tasks for demonstration
+    function generateLongTask() {
+      const start = performance.now();
+      while (performance.now() - start < 60) {
+        // Busy wait to create a long task
+      }
+    }
+    
+    // Generate a long task every few seconds
+    setTimeout(() => {
+      setInterval(generateLongTask, 5000);
+    }, 2000);
+    
+    // Start monitoring automatically
+    document.addEventListener('DOMContentLoaded', startMonitoring);
+  </script>
+</body>
+</html> 

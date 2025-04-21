@@ -38,9 +38,9 @@ perfMonitor.start();
 ### Using via CDN in the browser
 
 ```html
-<!-- 通过unpkg CDN -->
+<!-- Via unpkg CDN -->
 <script src="https://unpkg.com/perf-observer-kit@latest/dist/perf-observer-kit.browser.min.js"></script>
-<!-- 或者通过jsDelivr -->
+<!-- Or via jsDelivr -->
 <script src="https://cdn.jsdelivr.net/npm/perf-observer-kit@latest/dist/perf-observer-kit.browser.min.js"></script>
 
 <script>
@@ -96,26 +96,131 @@ perfMonitor.start();
 
 ## Configuration Options
 
+The library supports a modular configuration system, allowing fine-grained control over each monitoring module.
+
+### Basic Configuration
+
 ```javascript
 const perfMonitor = new PerfObserverKit({
   // Function to be called when metrics are collected
   onMetrics: (metrics) => {},
   
-  // Enable Core Web Vitals monitoring (default: true)
-  enableCoreWebVitals: true,
-  
-  // Enable Resource timing monitoring (default: true)
-  enableResourceTiming: true,
-  
-  // Enable Long Tasks monitoring (default: true)
-  enableLongTasks: true,
-  
-  // Enable Navigation timing monitoring (default: true)
-  enableNavigationTiming: true,
-  
   // Custom sampling rate (ms, 0 means no sampling)
-  samplingRate: 0
+  samplingRate: 0,
+  
+  // Enable/disable individual modules (simple boolean flags)
+  coreWebVitals: true,
+  resourceTiming: true,
+  longTasks: true,
+  navigationTiming: true
 });
+```
+
+### Advanced Configuration
+
+```javascript
+const perfMonitor = new PerfObserverKit({
+  onMetrics: (metrics) => {},
+  
+  // Core Web Vitals advanced configuration
+  coreWebVitals: {
+    enabled: true,
+    includeFCP: true,
+    includeLCP: true,
+    includeFID: true,
+    includeCLS: true,
+    includeINP: true
+  },
+  
+  // Resource Timing advanced configuration
+  resourceTiming: {
+    enabled: true,
+    excludedPatterns: [/analytics/, /tracker/], // Exclude analytics/tracker scripts
+    allowedTypes: ['script', 'img', 'css', 'fetch', 'xmlhttprequest'],
+    maxEntries: 500 // Maximum number of resource entries to store
+  },
+  
+  // Long Tasks advanced configuration
+  longTasks: {
+    enabled: true,
+    threshold: 50, // Duration threshold in ms
+    maxEntries: 100 // Maximum number of long tasks to store
+  },
+  
+  // Navigation Timing advanced configuration  
+  navigationTiming: {
+    enabled: true,
+    includeRawTiming: true // Include raw performance timing data
+  }
+});
+
+### Debugging & Logging
+
+The library provides debugging and logging capabilities to help troubleshoot performance monitoring issues:
+
+```javascript
+const perfMonitor = new PerfObserverKit({
+  // Enable debug mode (sets log level to DEBUG)
+  debug: true,
+  
+  // Or set a specific log level:
+  // 0: NONE - No logging
+  // 1: ERROR - Only errors
+  // 2: WARN - Warnings and errors (default)
+  // 3: INFO - Informational messages, warnings, and errors
+  // 4: DEBUG - Detailed debug messages, informational messages, warnings, and errors
+  logLevel: 3,
+  
+  // Auto-start monitoring when initialized
+  autoStart: true
+});
+
+// You can also set debug mode or log level after initialization
+perfMonitor.setDebugMode(true);  // Enable debug mode
+perfMonitor.setLogLevel(4);      // Set log level to DEBUG
+
+// Clear all collected metrics
+perfMonitor.clearMetrics();
+```
+
+When debug mode is enabled, the library will output detailed information about its operations to the console, which can be helpful for diagnosing issues.
+```
+
+### Legacy Configuration (Deprecated)
+
+```javascript
+// Legacy configuration is still supported for backward compatibility
+const perfMonitor = new PerfObserverKit({
+  enableCoreWebVitals: true,       // Deprecated, use coreWebVitals instead
+  enableResourceTiming: true,      // Deprecated, use resourceTiming instead
+  enableLongTasks: true,           // Deprecated, use longTasks instead
+  enableNavigationTiming: true,    // Deprecated, use navigationTiming instead
+  excludedResourcePatterns: [],    // Deprecated, use resourceTiming.excludedPatterns
+  allowedResourceTypes: []         // Deprecated, use resourceTiming.allowedTypes
+});
+```
+
+## Getting Metrics
+
+```javascript
+// Get current metrics at any time
+const currentMetrics = perfMonitor.getMetrics();
+
+// Core Web Vitals metrics
+console.log(currentMetrics.coreWebVitals.fcp);  // First Contentful Paint
+console.log(currentMetrics.coreWebVitals.lcp);  // Largest Contentful Paint
+console.log(currentMetrics.coreWebVitals.fid);  // First Input Delay
+console.log(currentMetrics.coreWebVitals.cls);  // Cumulative Layout Shift
+console.log(currentMetrics.coreWebVitals.inp);  // Interaction to Next Paint
+
+// Resource metrics
+console.log(currentMetrics.resources);          // Array of resource metrics
+
+// Long tasks
+console.log(currentMetrics.longTasks);          // Array of long tasks
+
+// Navigation metrics
+console.log(currentMetrics.navigation.ttfb);    // Time to First Byte
 ```
 
 ## Browser Compatibility
@@ -134,4 +239,4 @@ Check the `examples` directory for complete examples.
 
 ## License
 
-MIT # perf-observer-kit
+MIT
