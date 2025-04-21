@@ -38,7 +38,13 @@ const perfMonitor = new PerfObserverKit({
   onMetrics: function(metrics) {
     console.log('收集到性能指标:', metrics);
     // 可以将数据发送到分析服务器或展示在界面上
-  }
+  },
+  
+  // 重要提示：除了浏览器信息外，所有模块都需要显式启用
+  coreWebVitals: true, // 必须显式启用
+  resourceTiming: true, // 必须显式启用
+  longTasks: true, // 必须显式启用
+  navigationTiming: true // 必须显式启用
 });
 
 // 启动监控
@@ -61,17 +67,18 @@ const perfMonitor = new PerfObserverKit({
   autoStart: true,          // 是否自动开始监控
   samplingRate: 0,          // 采样率 (0-1), 0 表示不采样
   
-  // 核心 Web 指标配置
+  // 核心 Web 指标配置（需要显式开启）
   coreWebVitals: {
-    enabled: true,          // 是否启用核心 Web 指标监控
-    includeFCP: true,       // 是否包含 FCP
-    includeLCP: true,       // 是否包含 LCP
-    includeFID: true,       // 是否包含 FID
-    includeCLS: true,       // 是否包含 CLS
-    includeINP: true        // 是否包含 INP
+    enabled: true,          // 必须显式启用核心 Web 指标监控
+    // 每个指标都必须单独配置启用
+    includeFCP: true,       // 启用首次内容绘制监控
+    includeLCP: true,       // 启用最大内容绘制监控
+    includeFID: true,       // 启用首次输入延迟监控
+    includeCLS: true,       // 启用累积布局偏移监控
+    includeINP: true        // 启用交互到下一次绘制监控
   },
   
-  // 资源计时配置
+  // 资源计时配置（需要显式开启）
   resourceTiming: {
     enabled: true,          // 是否启用资源计时监控
     excludedPatterns: [     // 要排除的资源 URL 正则表达式
@@ -84,22 +91,22 @@ const perfMonitor = new PerfObserverKit({
     maxEntries: 1000        // 最大记录条目数
   },
   
-  // 长任务监控配置
+  // 长任务监控配置（需要显式开启）
   longTasks: {
     enabled: true,          // 是否启用长任务监控
     threshold: 50,          // 长任务阈值 (毫秒)
     maxEntries: 50          // 最大记录条目数
   },
   
-  // 导航计时配置
+  // 导航计时配置（需要显式开启）
   navigationTiming: {
     enabled: true,          // 是否启用导航计时监控
     includeRawTiming: false // 是否包含原始计时数据
   },
   
-  // 浏览器信息配置
+  // 浏览器信息配置（默认开启）
   browserInfo: {
-    enabled: true,          // 是否启用浏览器信息收集
+    enabled: true,          // 浏览器信息收集默认开启
     trackResize: true,      // 窗口大小改变时是否更新信息
     includeOSDetails: true, // 是否包含详细的操作系统信息
     includeSizeInfo: true   // 是否包含屏幕和窗口尺寸信息
@@ -201,7 +208,9 @@ PerfObserverKit 根据页面可见性状态智能处理性能指标：
 
 ## 浏览器和设备信息收集
 
-PerfObserverKit 提供了浏览器和设备信息收集功能，帮助您了解用户环境对性能的影响。
+PerfObserverKit 提供了浏览器和设备信息收集功能，帮助您了解用户环境对性能的影响。**该功能是唯一默认开启的模块**。
+
+**重要说明：** 除了浏览器信息收集外，其他所有模块（核心Web指标、资源计时、长任务和导航计时）都必须显式配置才能开启。特别是核心Web指标中的每个子指标（FCP、LCP、FID、CLS、INP等）也都需要单独配置启用。
 
 ### 收集的信息类型
 

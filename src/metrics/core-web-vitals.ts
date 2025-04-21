@@ -27,12 +27,14 @@ export class CoreWebVitalsObserver {
   constructor(options: CoreWebVitalsObserverOptions) {
     this.onUpdate = options.onUpdate;
     this.options = {
-      enabled: options.enabled !== undefined ? options.enabled : true,
-      includeFCP: options.includeFCP !== undefined ? options.includeFCP : true,
-      includeLCP: options.includeLCP !== undefined ? options.includeLCP : true,
-      includeFID: options.includeFID !== undefined ? options.includeFID : true,
-      includeCLS: options.includeCLS !== undefined ? options.includeCLS : true,
-      includeINP: options.includeINP !== undefined ? options.includeINP : true,
+      // 默认不启用，必须显式配置
+      enabled: options.enabled !== undefined ? options.enabled : false,
+      // 所有指标默认都不启用，必须显式配置启用
+      includeFCP: options.includeFCP !== undefined ? options.includeFCP : false,
+      includeLCP: options.includeLCP !== undefined ? options.includeLCP : false,
+      includeFID: options.includeFID !== undefined ? options.includeFID : false,
+      includeCLS: options.includeCLS !== undefined ? options.includeCLS : false,
+      includeINP: options.includeINP !== undefined ? options.includeINP : false,
       ...options
     };
   }

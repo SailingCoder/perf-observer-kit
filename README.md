@@ -103,6 +103,8 @@ perfMonitor.start();
 - Current page URL
 - Language and platform information
 
+**Note: Browser Information is the only module enabled by default.** All other modules (Core Web Vitals, Resource Timing, Long Tasks, and Navigation Timing) must be explicitly enabled.
+
 ## Configuration Options
 
 The library supports a modular configuration system, allowing fine-grained control over each monitoring module.
@@ -117,11 +119,14 @@ const perfMonitor = new PerfObserverKit({
   // Custom sampling rate (ms, 0 means no sampling)
   samplingRate: 0,
   
+  // Important: Only Browser Information is enabled by default
+  // All other modules must be explicitly enabled as shown below
+  
   // Enable/disable individual modules (simple boolean flags)
-  coreWebVitals: true,
-  resourceTiming: true,
-  longTasks: true,
-  navigationTiming: true
+  coreWebVitals: true, // Must be explicitly enabled
+  resourceTiming: true, // Must be explicitly enabled
+  longTasks: true, // Must be explicitly enabled
+  navigationTiming: true // Must be explicitly enabled
 });
 ```
 
@@ -133,12 +138,13 @@ const perfMonitor = new PerfObserverKit({
   
   // Core Web Vitals advanced configuration
   coreWebVitals: {
-    enabled: true,
-    includeFCP: true,
-    includeLCP: true,
-    includeFID: true,
-    includeCLS: true,
-    includeINP: true
+    enabled: true, // Must be explicitly enabled
+    // Each metric must be explicitly enabled
+    includeFCP: true, // Enable First Contentful Paint monitoring
+    includeLCP: true, // Enable Largest Contentful Paint monitoring
+    includeFID: true, // Enable First Input Delay monitoring 
+    includeCLS: true, // Enable Cumulative Layout Shift monitoring
+    includeINP: true  // Enable Interaction to Next Paint monitoring
   },
   
   // Resource Timing advanced configuration

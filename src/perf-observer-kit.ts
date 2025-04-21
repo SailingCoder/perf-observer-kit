@@ -76,19 +76,19 @@ export class PerfObserverKit {
       autoStart: options.autoStart !== undefined ? options.autoStart : false,
       samplingRate: options.samplingRate || 0, // 0表示不采样，报告所有指标
       
-      // 核心Web指标配置
-      coreWebVitals: this.normalizeModuleOptions(options.coreWebVitals, true),
+      // 核心Web指标配置 - 默认不启用，必须显式配置
+      coreWebVitals: this.normalizeModuleOptions(options.coreWebVitals, false),
       
-      // 资源计时配置
+      // 资源计时配置 - 默认不启用，必须显式配置
       resourceTiming: this.normalizeResourceOptions(options.resourceTiming, options),
       
-      // 长任务监控配置
-      longTasks: this.normalizeModuleOptions(options.longTasks, true),
+      // 长任务监控配置 - 默认不启用，必须显式配置
+      longTasks: this.normalizeModuleOptions(options.longTasks, false),
       
-      // 导航计时配置
-      navigationTiming: this.normalizeModuleOptions(options.navigationTiming, true),
+      // 导航计时配置 - 默认不启用，必须显式配置
+      navigationTiming: this.normalizeModuleOptions(options.navigationTiming, false),
       
-      // 浏览器信息配置
+      // 浏览器信息配置 - 唯一默认启用的模块
       browserInfo: this.normalizeModuleOptions(options.browserInfo, true)
     };
     
@@ -192,7 +192,8 @@ export class PerfObserverKit {
     legacyOptions: PerfObserverOptions
   ): Required<ResourceTimingOptions> {
     try {
-      const normalizedOptions = this.normalizeModuleOptions(options, true);
+      // 默认不启用，必须显式配置
+      const normalizedOptions = this.normalizeModuleOptions(options, false);
       
       return {
         enabled: normalizedOptions.enabled,
@@ -206,7 +207,7 @@ export class PerfObserverKit {
     } catch (error) {
       logger.error('规范化资源计时选项失败:', error);
       return {
-        enabled: true,
+        enabled: false, // 默认不启用
         excludedPatterns: [],
         allowedTypes: ['script', 'link', 'img', 'css', 'font'],
         maxEntries: 1000
@@ -225,25 +226,28 @@ export class PerfObserverKit {
     
     logger.info('开始监控性能指标');
     
+    // 核心Web指标 - 需要显式配置启用
     if (this.options.coreWebVitals.enabled) {
       this.startCoreWebVitalsMonitoring();
     }
     
+    // 资源计时 - 需要显式配置启用
     if (this.options.resourceTiming.enabled) {
       this.startResourceTimingMonitoring();
     }
     
+    // 长任务监控 - 需要显式配置启用
     if (this.options.longTasks.enabled) {
       this.startLongTasksMonitoring();
     }
     
+    // 导航计时 - 需要显式配置启用
     if (this.options.navigationTiming.enabled) {
       this.startNavigationTimingMonitoring();
     }
     
-    if (this.options.browserInfo.enabled) {
-      this.startBrowserInfoMonitoring();
-    }
+    // 浏览器信息 - 默认启用，无论配置如何都启动
+    this.startBrowserInfoMonitoring();
     
     this.isRunning = true;
     logger.debug('所有启用的性能监控模块已启动');
@@ -300,13 +304,18 @@ export class PerfObserverKit {
    * 清除指标数据
    */
   clearMetrics(): void {
-    logger.debug('清除所有指标数据');
+    logger.debug('清除指标数据，保留浏览器信息');
+    
+    // 保存当前的浏览器信息
+    const currentBrowserInfo = this.metrics.browserInfo;
+    
     this.metrics = {
       coreWebVitals: {},
       resources: [],
       longTasks: [],
       navigation: {},
-      browserInfo: {}
+      // 保留浏览器信息不清除
+      browserInfo: currentBrowserInfo
     };
   }
   
@@ -482,7 +491,7 @@ export class PerfObserverKit {
           this.metrics.browserInfo = browserInfo;
           this.notifyMetricsUpdate();
         },
-        enabled: options.enabled,
+        enabled: true, // 强制启用，无论配置如何
         trackResize: options.trackResize,
         includeOSDetails: options.includeOSDetails,
         includeSizeInfo: options.includeSizeInfo
