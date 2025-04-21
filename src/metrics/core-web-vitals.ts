@@ -128,7 +128,8 @@ export class CoreWebVitalsObserver {
       onUpdate: (metric) => {
         this.metrics.lcp = metric;
         this.notifyMetricsUpdate();
-      }
+      },
+      backgroundLoadThreshold: this.options.backgroundLoadThreshold
     });
     
     this.lcpObserver.start();

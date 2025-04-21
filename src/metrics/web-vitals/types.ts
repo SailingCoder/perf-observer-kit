@@ -29,6 +29,9 @@ export interface ObserverOptions {
     good?: number;
     needsImprovement?: number;
   };
+
+  /** 后台加载超时阈值（毫秒），默认为5000ms */
+  backgroundLoadThreshold?: number;
 }
 
 /**
@@ -55,6 +58,10 @@ export interface CoreWebVitalsObserverOptions {
   
   /** 是否监控INP指标 */
   includeINP?: boolean;
+  
+  /** 后台加载超时阈值（毫秒），默认为5000ms。
+   * 控制在后台加载页面变为可见时，LCP值的处理方式 */
+  backgroundLoadThreshold?: number;
 }
 
 /**
