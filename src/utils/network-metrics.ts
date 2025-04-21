@@ -40,9 +40,7 @@ export class NetworkMetricsCollector {
         saveData: networkInfo.saveData
       } : undefined,
       url: typeof window !== 'undefined' ? window.location.href : undefined,
-      userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : undefined,
       visibilityState: typeof document !== 'undefined' ? document.visibilityState : undefined,
-      devicePixelRatio: typeof window !== 'undefined' ? window.devicePixelRatio : undefined,
       ...extraContext
     };
   }

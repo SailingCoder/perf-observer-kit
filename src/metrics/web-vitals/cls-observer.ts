@@ -82,6 +82,45 @@ export class CLSObserver extends BaseObserver {
   }
   
   /**
+   * 页面可见性变化时的回调
+   * @param isVisible 页面是否可见
+   */
+  protected onVisibilityChange(isVisible: boolean): void {
+    if (!isVisible) {
+      // 当页面隐藏时，报告当前累积的CLS值
+      if (this.sessionValue > 0) {
+        const cls: MetricData = {
+          name: 'CLS',
+          value: this.sessionValue,
+          unit: '',
+          timestamp: performance.now(),
+          context: this.getNetworkContext({
+            shiftCount: this.sessionEntries.length,
+            largestShift: this.sessionEntries.length > 0 
+              ? Math.max(...this.sessionEntries.map((e) => (e as LayoutShift).value)) 
+              : 0,
+            visibilityChange: 'hidden'
+          })
+        };
+        
+        // CLS rating thresholds
+        if (cls.value <= 0.1) {
+          cls.rating = 'good';
+        } else if (cls.value <= 0.25) {
+          cls.rating = 'needs-improvement';
+        } else {
+          cls.rating = 'poor';
+        }
+        
+        logger.debug('页面隐藏，报告当前累积CLS值:', cls.value);
+        this.onUpdate(cls);
+      }
+    } else {
+      logger.debug('页面重新可见，继续累积CLS值');
+    }
+  }
+  
+  /**
    * BFCache恢复处理
    * CLS应该重置累积值
    */

@@ -8,6 +8,12 @@ export interface MetricData {
   url?: string; // 发生指标的页面URL
   rating?: MetricRating; // 可选的性能评级
   context?: Record<string, any>; // 其他上下文信息
+  networkMetrics?: {
+    downlink?: number; // 下行速度 (Mbps)
+    effectiveType?: string; // 网络类型 (4g, 3g等)
+    rtt?: number; // 往返时间 (ms)
+    saveData?: boolean; // 是否启用数据节省模式
+  }; // 网络性能指标
 }
 
 /**

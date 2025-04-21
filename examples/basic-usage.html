@@ -8,14 +8,18 @@
 <body>
   <h1>Basic PerfObserverKit Usage</h1>
   <p>Open the browser console to see performance metrics</p>
+  <p><strong>Note:</strong> Except for browser information, all modules must be explicitly enabled as shown in this example.</p>
 
   <!-- 加载我们的库 -->
-  <script src="../browser.js"></script>
+  <script src="../dist/perf-observer-kit.browser.js"></script>
   <script>
     // Initialize the performance monitoring
     const perfMonitor = new PerfObserverKit.PerfObserverKit({
       onMetrics: (metrics) => {
         console.log('Performance metrics updated:', metrics);
+        
+        // Log browser information (default enabled)
+        console.log('Browser Info:', metrics.browserInfo);
         
         // Log Core Web Vitals when they change
         if (metrics.coreWebVitals.fcp) {
@@ -36,9 +40,38 @@
         
         // Log TTFB when available
         if (metrics.navigation.ttfb) {
-          console.log(`TTFB: ${metrics.navigation.ttfb.value.toFixed(2)}ms (${metrics.navigation.ttfb.rating})`);
+          console.log(`TTFB: ${metrics.navigation.ttfb}ms`);
         }
+      },
+      
+      // IMPORTANT: All modules except browserInfo must be explicitly enabled
+      
+      // Enable Core Web Vitals monitoring and all its metrics
+      coreWebVitals: {
+        enabled: true,
+        includeFCP: true,
+        includeLCP: true,
+        includeFID: true, 
+        includeCLS: true,
+        includeINP: true
+      },
+      
+      // Enable Resource Timing monitoring
+      resourceTiming: {
+        enabled: true
+      },
+      
+      // Enable Long Tasks monitoring
+      longTasks: {
+        enabled: true
+      },
+      
+      // Enable Navigation Timing monitoring
+      navigationTiming: {
+        enabled: true
       }
+      
+      // Note: browserInfo is enabled by default, no need to configure
     });
     
     // Start monitoring

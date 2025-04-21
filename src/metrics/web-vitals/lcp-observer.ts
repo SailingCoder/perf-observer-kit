@@ -21,6 +21,11 @@ export class LCPObserver extends BaseObserver {
     this.startLCPMonitoring();
   }
   
+  private getActivationStart(): number {
+    const navigationEntry = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming;
+    const activationStart:any = navigationEntry?.activationStart;
+    return activationStart ? activationStart : 0;
+  }
   /**
    * 启动LCP监控
    */
@@ -28,6 +33,7 @@ export class LCPObserver extends BaseObserver {
     try {
       this.lcpObserver = new PerformanceObserver((entryList) => {
         // 只在页面可见状态下处理LCP事件
+        console.log('lcpObserver1212', this.isPageVisible);
         if (!this.isPageVisible) {
           return; // 页面不可见时忽略LCP事件
         }
@@ -43,15 +49,15 @@ export class LCPObserver extends BaseObserver {
             name: 'LCP',
             value: lcpValue,
             unit: 'ms',
-            timestamp: performance.now(),
+            timestamp: new Date().getTime(),
             url: typeof window !== 'undefined' ? window.location.href : undefined,
-            // 添加网络信息作为附加上下文
-            context: this.getNetworkContext({
+            networkMetrics: this.getNetworkInformation(),
+            context: {
               elementId: (lastEntry as any).element ? (lastEntry as any).element.id || null : null,
               elementTagName: (lastEntry as any).element ? (lastEntry as any).element.tagName || null : null,
               elementType: (lastEntry as any).element ? (lastEntry as any).element.type || null : null,
               size: (lastEntry as any).size || 0
-            })
+            }
           };
           
           // LCP rating thresholds (ms)
@@ -90,6 +96,25 @@ export class LCPObserver extends BaseObserver {
     }
     
     super.stop();
+  }
+  
+  /**
+   * 页面可见性变化时的回调
+   * @param isVisible 页面是否可见
+   */
+  protected onVisibilityChange(isVisible: boolean): void {
+    if (!isVisible) {
+      // 当页面隐藏时，停止监听LCP
+      if (this.lcpObserver) {
+        logger.debug('页面隐藏，暂停LCP监听');
+        this.lcpObserver.disconnect();
+        this.lcpObserver = null;
+      }
+    } else if (!this.lcpObserver && !this.userHasInteracted) {
+      // 当页面重新可见且用户未交互时，重新启动LCP监控
+      logger.debug('页面重新可见，恢复LCP监听');
+      this.startLCPMonitoring();
+    }
   }
   
   /**

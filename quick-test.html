@@ -95,7 +95,29 @@
           //   const lastTask = metrics.longTasks[metrics.longTasks.length - 1];
           //   console.log('长任务:', lastTask.duration.toFixed(2) + 'ms');
           // }
-        }
+        },
+        debug: true,
+        disableInProduction: false,
+        logLevel: 4,
+        coreWebVitals: {
+          enabled: true,
+          includeFCP: true,
+          includeLCP: true,
+          // includeFID: true,
+          // includeCLS: true,
+        },
+        resourceTiming: {
+          enabled: true,
+        },
+        longTasks: {
+          enabled: true,
+        },
+        navigationTiming: {
+          enabled: true,
+        },
+        resourceTiming: {
+          enabled: true,
+        },
       });
       
       // 启动监控

@@ -1,6 +1,7 @@
 import { MetricData } from '../../types';
 import { ObserverOptions } from './types';
 import { BaseObserver } from './base-observer';
+import { logger } from '../../utils/logger';
 
 /**
  * First Contentful Paint (FCP) 观察者
@@ -23,13 +24,14 @@ export class FCPObserver extends BaseObserver {
         
         for (const entry of entries) {
           if (entry.name === 'first-contentful-paint') {
+            
             const fcp: MetricData = {
               name: 'FCP',
               value: entry.startTime,
               unit: 'ms',
-              timestamp: performance.now(),
-              // 添加网络信息作为上下文
-              context: this.getNetworkContext()
+              timestamp: new Date().getTime(),
+              url: typeof window !== 'undefined' ? window.location.href : undefined,
+              networkMetrics: this.getNetworkInformation()
             };
             
             // FCP评级阈值
@@ -55,7 +57,7 @@ export class FCPObserver extends BaseObserver {
       
       this.fcpObserver.observe({ type: 'paint', buffered: true });
     } catch (error) {
-      console.error('FCP monitoring not supported', error);
+      logger.error('FCP监控不受支持', error);
     }
   }
   
@@ -69,6 +71,20 @@ export class FCPObserver extends BaseObserver {
     }
     
     super.stop();
+  }
+  
+  /**
+   * 页面可见性变化时的回调
+   * @param isVisible 页面是否可见
+   */
+  protected onVisibilityChange(isVisible: boolean): void {
+    // FCP通常是页面加载时的一次性事件，不需要在可见性变化时特殊处理
+    // 但仍然可以记录日志以便调试
+    if (!isVisible) {
+      logger.debug('页面隐藏，FCP已经收集或仍在等待首次内容绘制');
+    } else {
+      logger.debug('页面重新可见，FCP状态不变');
+    }
   }
   
   /**

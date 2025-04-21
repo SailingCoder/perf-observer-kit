@@ -90,10 +90,12 @@ export abstract class BaseObserver {
     this.isPageVisible = document.visibilityState === 'visible';
     
     this.visibilityChangeHandler = (event: Event) => {
-      const wasVisible = this.isPageVisible;
       this.isPageVisible = document.visibilityState === 'visible';
       
       logger.debug('页面可见性变化:', this.isPageVisible ? '可见' : '隐藏');
+      
+      // 通知子类可见性变化
+      this.onVisibilityChange(this.isPageVisible);
     };
     
     document.addEventListener('visibilitychange', this.visibilityChangeHandler);
@@ -177,6 +179,14 @@ export abstract class BaseObserver {
    */
   protected calculateTimeDelta(end: number, start: number): number {
     return calculateTimeDelta(end, start);
+  }
+  
+  /**
+   * 页面可见性变化时的回调 - 可由子类重写
+   * @param isVisible 页面是否可见
+   */
+  protected onVisibilityChange(isVisible: boolean): void {
+    // 默认实现为空，由子类覆盖
   }
   
   /**

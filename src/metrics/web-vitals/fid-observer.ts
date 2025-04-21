@@ -1,6 +1,7 @@
 import { MetricData } from '../../types';
 import { ObserverOptions } from './types';
 import { BaseObserver } from './base-observer';
+import { logger } from '../../utils/logger';
 
 /**
  * First Input Delay (FID) 观察者
@@ -54,7 +55,7 @@ export class FIDObserver extends BaseObserver {
       
       this.fidObserver.observe({ type: 'first-input', buffered: true });
     } catch (error) {
-      console.error('FID monitoring not supported', error);
+      logger.error('FID监控不受支持', error);
     }
   }
   
@@ -68,6 +69,19 @@ export class FIDObserver extends BaseObserver {
     }
     
     super.stop();
+  }
+  
+  /**
+   * 页面可见性变化时的回调
+   * @param isVisible 页面是否可见
+   */
+  protected onVisibilityChange(isVisible: boolean): void {
+    // FID通常是页面加载后的首次输入事件，不需要在可见性变化时特殊处理
+    if (!isVisible) {
+      logger.debug('页面隐藏，FID已经收集或仍在等待首次输入事件');
+    } else {
+      logger.debug('页面重新可见，FID状态不变');
+    }
   }
   
   /**
