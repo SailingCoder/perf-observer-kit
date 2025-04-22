@@ -5,7 +5,7 @@ import { BrowserInfo } from './browser-info-types';
  * 指标类型枚举
  */
 export enum MetricType {
-  WEB_VITALS = 'webVitals',
+  WEB_VITALS = 'coreWebVitals',
   RESOURCES = 'resources',
   LONG_TASKS = 'longTasks',
   NAVIGATION = 'navigation',

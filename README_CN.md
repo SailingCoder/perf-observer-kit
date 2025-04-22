@@ -474,3 +474,63 @@ console.log(metrics.browserInfo.os);     // 操作系统详细信息
 console.log(metrics.browserInfo.screenSize); // 屏幕尺寸
 console.log(metrics.browserInfo.windowSize); // 窗口尺寸
 ```
+
+## 获取指标
+
+```javascript
+// 随时获取当前指标
+const currentMetrics = perfMonitor.getMetrics();
+
+// 核心Web指标
+console.log(currentMetrics.coreWebVitals.fcp);  // 首次内容绘制
+console.log(currentMetrics.coreWebVitals.lcp);  // 最大内容绘制
+console.log(currentMetrics.coreWebVitals.fid);  // 首次输入延迟
+console.log(currentMetrics.coreWebVitals.cls);  // 累积布局偏移
+console.log(currentMetrics.coreWebVitals.inp);  // 交互到下一次绘制
+
+// 资源指标
+console.log(currentMetrics.resources);          // 资源数组
+
+// 长任务
+console.log(currentMetrics.longTasks);          // 长任务数组
+
+// 导航指标
+console.log(currentMetrics.navigation.ttfb);    // 首字节时间
+
+// 浏览器信息
+console.log(currentMetrics.browserInfo);        // 浏览器和设备信息
+console.log(currentMetrics.browserInfo.browser);// 浏览器名称和版本
+console.log(currentMetrics.browserInfo.os);     // 操作系统详细信息
+```
+
+## 常见问题解决
+
+### "PerfObserverKit is not defined" 错误
+
+如果在浏览器中遇到此错误，请确保使用正确的浏览器构建版本：
+
+```html
+<!-- 在浏览器环境中，始终使用浏览器构建版本 -->
+<script src="https://unpkg.com/perf-observer-kit@latest/dist/perf-observer-kit.browser.js"></script>
+
+<script>
+  // 库作为全局 PerfObserverKit 对象可用
+  const monitor = new PerfObserverKit.PerfObserverKit({
+    onMetrics: (metrics) => console.log('性能指标:', metrics)
+  });
+  
+  // MetricType 枚举也在全局对象上可用
+  console.log(PerfObserverKit.MetricType.WEB_VITALS);
+  
+  monitor.start();
+</script>
+```
+
+不要在浏览器代码中直接使用非浏览器构建版本：
+
+```html
+<!-- ❌ 不要在浏览器环境中使用这个 -->
+<script src="https://unpkg.com/perf-observer-kit@latest/dist/index.js"></script>
+```
+
+## 浏览器兼容性

@@ -88,274 +88,282 @@
   <div class="metrics-container">
     <div class="metrics-section">
       <h2>Core Web Vitals</h2>
-      <div id="core-web-vitals"></div>
+      <div id="core-web-vitals">No data available yet</div>
     </div>
     
     <div class="metrics-section">
       <h2>Navigation Timing</h2>
-      <div id="navigation-timing"></div>
+      <div id="navigation-timing">No data available yet</div>
     </div>
     
     <div class="metrics-section">
       <h2>Long Tasks</h2>
-      <div id="long-tasks"></div>
+      <div id="long-tasks">No long tasks detected yet</div>
     </div>
     
     <div class="metrics-section">
       <h2>Resource Timing</h2>
-      <div id="resource-timing"></div>
+      <div id="resource-timing">No resources detected yet</div>
     </div>
   </div>
   
   <div class="img-container" id="img-container"></div>
   
-  <script src="../dist/index.js"></script>
+  <!-- Always use the browser-compatible UMD build -->
+  <script src="../dist/perf-observer-kit.browser.js"></script>
   <script>
     document.addEventListener('DOMContentLoaded', () => {
-      // Initialize the performance monitoring
-      const perfMonitor = new PerfObserverKit.PerfObserverKit({
-        onMetrics: (type, metrics) => {
-          updateMetricsDisplay(type, metrics);
-        }
-      });
+      if (typeof PerfObserverKit === 'undefined') {
+        console.error('PerfObserverKit is not defined. Make sure you are using the browser build.');
+        document.body.innerHTML = '<h1>Error: PerfObserverKit not loaded properly</h1><p>Please check console for details.</p>';
+        return;
+      }
       
-      // Start monitoring
-      perfMonitor.start();
-      
-      // 保存所有指标数据
-      const allMetrics = {
-        coreWebVitals: {},
-        resources: [],
-        longTasks: [],
-        navigation: {}
-      };
-      
-      // Update the metrics display
-      function updateMetricsDisplay(type, metrics) {
-        // 根据指标类型更新不同的指标数据
-        switch(type) {
-          case PerfObserverKit.MetricType.WEB_VITALS:
-            // 更新核心Web指标
-            allMetrics.coreWebVitals = { ...allMetrics.coreWebVitals, ...metrics };
+      try {
+        // Initialize the performance monitoring
+        const perfMonitor = new PerfObserverKit.PerfObserverKit({
+          onMetrics: (type, metrics) => {
+            console.log('Performance metrics updated:', type, metrics);
+            updateMetricsDisplay(type, metrics);
+          },
+          // Enable all metrics modules
+          coreWebVitals: {
+            enabled: true,
+            fcp: true,
+            lcp: true,
+            fid: true,
+            cls: true,
+            inp: true
+          },
+          resourceTiming: true,
+          longTasks: true,
+          navigationTiming: true,
+          debug: true
+        });
+        
+        // Start monitoring
+        perfMonitor.start();
+        
+        // Update the metrics display
+        function updateMetricsDisplay(type, metrics) {
+          // Update all metrics displays with the complete metrics object
+          if (type === 'coreWebVitals') {
             updateCoreWebVitalsDisplay(metrics);
-            break;
-            
-          case PerfObserverKit.MetricType.RESOURCES:
-            // 更新资源计时
-            allMetrics.resources.push(...metrics);
-            allMetrics.resources = allMetrics.resources.slice(-20); // 只保留最近20个资源
-            updateResourceTimingDisplay(allMetrics.resources);
-            break;
-            
-          case PerfObserverKit.MetricType.LONG_TASKS:
-            // 更新长任务
-            allMetrics.longTasks.push(...metrics);
-            allMetrics.longTasks = allMetrics.longTasks.slice(-10); // 只保留最近10个长任务
-            updateLongTasksDisplay(allMetrics.longTasks);
-            break;
-            
-          case PerfObserverKit.MetricType.NAVIGATION:
-            // 更新导航计时
-            allMetrics.navigation = { ...allMetrics.navigation, ...metrics };
-            updateNavigationTimingDisplay(metrics);
-            break;
-        }
-      }
-      
-      // 更新核心Web指标显示
-      function updateCoreWebVitalsDisplay(metrics) {
-        const coreWebVitalsEl = document.getElementById('core-web-vitals');
-        let coreWebVitalsHTML = '';
-        
-        if (metrics.lcp) {
-          const lcp = metrics.lcp;
-          coreWebVitalsHTML += `
-            <div class="metric">
-              <div class="name">Largest Contentful Paint (LCP)</div>
-              <div class="value ${lcp.rating}">${lcp.value.toFixed(2)} ms</div>
-            </div>
-          `;
-        }
-        
-        if (metrics.fid) {
-          const fid = metrics.fid;
-          coreWebVitalsHTML += `
-            <div class="metric">
-              <div class="name">First Input Delay (FID)</div>
-              <div class="value ${fid.rating}">${fid.value.toFixed(2)} ms</div>
-            </div>
-          `;
-        }
-        
-        if (metrics.cls) {
-          const cls = metrics.cls;
-          coreWebVitalsHTML += `
-            <div class="metric">
-              <div class="name">Cumulative Layout Shift (CLS)</div>
-              <div class="value ${cls.rating}">${cls.value.toFixed(4)}</div>
-            </div>
-          `;
-        }
-        
-        if (metrics.inp) {
-          const inp = metrics.inp;
-          coreWebVitalsHTML += `
-            <div class="metric">
-              <div class="name">Interaction to Next Paint (INP)</div>
-              <div class="value ${inp.rating}">${inp.value.toFixed(2)} ms</div>
-            </div>
-          `;
-        }
-        
-        if (coreWebVitalsHTML) {
-          coreWebVitalsEl.innerHTML = coreWebVitalsHTML;
-        }
-      }
-      
-      // 更新导航计时显示
-      function updateNavigationTimingDisplay(metrics) {
-        const navigationTimingEl = document.getElementById('navigation-timing');
-        let navigationTimingHTML = '';
-        
-        if (metrics.ttfb) {
-          navigationTimingHTML += `
-            <div class="metric">
-              <div class="name">Time to First Byte (TTFB)</div>
-              <div class="value">${metrics.ttfb.toFixed(2)} ms</div>
-            </div>
-          `;
-        }
-        
-        if (metrics.domContentLoaded) {
-          navigationTimingHTML += `
-            <div class="metric">
-              <div class="name">DOM Content Loaded</div>
-              <div class="value">${metrics.domContentLoaded.toFixed(2)} ms</div>
-            </div>
-          `;
-        }
-        
-        if (metrics.loadEvent) {
-          navigationTimingHTML += `
-            <div class="metric">
-              <div class="name">Load Event</div>
-              <div class="value">${metrics.loadEvent.toFixed(2)} ms</div>
-            </div>
-          `;
-        }
-        
-        if (navigationTimingHTML) {
-          navigationTimingEl.innerHTML = navigationTimingHTML;
-        }
-      }
-      
-      // 更新长任务显示
-      function updateLongTasksDisplay(tasks) {
-        const longTasksEl = document.getElementById('long-tasks');
-        if (tasks.length > 0) {
-          let longTasksHTML = '';
-          
-          // 只显示最后5个长任务
-          const lastTasks = tasks.slice(-5);
-          
-          lastTasks.forEach((task, index) => {
-            longTasksHTML += `
-              <div class="metric">
-                <div class="name">Task ${index + 1}</div>
-                <div class="value">Duration: ${task.duration.toFixed(2)} ms</div>
-                <div class="value">Attribution: ${task.attribution || 'unknown'}</div>
-              </div>
-            `;
-          });
-          
-          longTasksEl.innerHTML = longTasksHTML;
-        }
-      }
-      
-      // 更新资源计时显示
-      function updateResourceTimingDisplay(resources) {
-        const resourceTimingEl = document.getElementById('resource-timing');
-        if (resources.length > 0) {
-          let resourcesHTML = '';
-          
-          // 只显示最后5个资源
-          const lastResources = resources.slice(-5);
-          
-          lastResources.forEach((resource, index) => {
-            const url = new URL(resource.name);
-            const filename = url.pathname.split('/').pop() || url.hostname;
-            
-            resourcesHTML += `
-              <div class="metric">
-                <div class="name">${resource.initiatorType}: ${filename}</div>
-                <div class="value">Duration: ${resource.duration.toFixed(2)} ms</div>
-                <div class="value">Size: ${formatBytes(resource.transferSize || 0)}</div>
-              </div>
-            `;
-          });
-          
-          resourceTimingEl.innerHTML = resourcesHTML;
-        }
-      }
-      
-      // Format bytes
-      function formatBytes(bytes, decimals = 2) {
-        if (bytes === 0) return '0 Bytes';
-        
-        const k = 1024;
-        const dm = decimals < 0 ? 0 : decimals;
-        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-        
-        const i = Math.floor(Math.log(bytes) / Math.log(k));
-        
-        return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
-      }
-      
-      // Add event listeners for demo buttons
-      document.getElementById('generate-load').addEventListener('click', () => {
-        // Generate some long tasks
-        const start = performance.now();
-        
-        // Add some images to generate layout shifts
-        const imgContainer = document.getElementById('img-container');
-        imgContainer.innerHTML = '';
-        
-        for (let i = 0; i < 3; i++) {
-          const img = document.createElement('img');
-          img.src = `https://picsum.photos/300/200?random=${Math.random()}`;
-          imgContainer.appendChild(img);
-          
-          // Force layout shifts by changing image sizes after loading
-          img.onload = () => {
-            setTimeout(() => {
-              img.style.width = '350px';
-              img.style.height = '250px';
-            }, 500);
-          };
-        }
-        
-        // Create a long task
-        const blockTime = 100; // ms
-        const blockStart = performance.now();
-        while (performance.now() - blockStart < blockTime) {
-          // Blocking the main thread
-          const arr = [];
-          for (let i = 0; i < 10000; i++) {
-            arr.push(Math.random());
           }
-          arr.sort();
+          
+          if (type === 'navigation') {
+            updateNavigationTimingDisplay(metrics);
+          }
+          
+          if (type === 'longTasks' && metrics.length > 0) {
+            updateLongTasksDisplay(metrics);
+          }
+          
+          if (type === 'resources' && metrics.length > 0) {
+            updateResourceTimingDisplay(metrics);
+          }
         }
-      });
-      
-      document.getElementById('clear-metrics').addEventListener('click', () => {
-        document.getElementById('img-container').innerHTML = '';
-        // Clear metrics display
-        document.getElementById('core-web-vitals').innerHTML = 'No data available yet';
-        document.getElementById('navigation-timing').innerHTML = 'No data available yet';
-        document.getElementById('long-tasks').innerHTML = 'No long tasks detected yet';
-        document.getElementById('resource-timing').innerHTML = 'No resources detected yet';
-      });
+        
+        // Update Core Web Vitals display
+        function updateCoreWebVitalsDisplay(metrics) {
+          const coreWebVitalsEl = document.getElementById('core-web-vitals');
+          let coreWebVitalsHTML = '';
+          
+          if (metrics.lcp) {
+            const lcp = metrics.lcp;
+            coreWebVitalsHTML += `
+              <div class="metric">
+                <div class="name">Largest Contentful Paint (LCP)</div>
+                <div class="value ${lcp.rating}">${lcp.value.toFixed(2)} ms</div>
+              </div>
+            `;
+          }
+          
+          if (metrics.fid) {
+            const fid = metrics.fid;
+            coreWebVitalsHTML += `
+              <div class="metric">
+                <div class="name">First Input Delay (FID)</div>
+                <div class="value ${fid.rating}">${fid.value.toFixed(2)} ms</div>
+              </div>
+            `;
+          }
+          
+          if (metrics.cls) {
+            const cls = metrics.cls;
+            coreWebVitalsHTML += `
+              <div class="metric">
+                <div class="name">Cumulative Layout Shift (CLS)</div>
+                <div class="value ${cls.rating}">${cls.value.toFixed(4)}</div>
+              </div>
+            `;
+          }
+          
+          if (metrics.inp) {
+            const inp = metrics.inp;
+            coreWebVitalsHTML += `
+              <div class="metric">
+                <div class="name">Interaction to Next Paint (INP)</div>
+                <div class="value ${inp.rating}">${inp.value.toFixed(2)} ms</div>
+              </div>
+            `;
+          }
+          
+          if (coreWebVitalsHTML) {
+            coreWebVitalsEl.innerHTML = coreWebVitalsHTML;
+          }
+        }
+        
+        // Update Navigation Timing display
+        function updateNavigationTimingDisplay(metrics) {
+          const navigationTimingEl = document.getElementById('navigation-timing');
+          let navigationTimingHTML = '';
+          
+          if (metrics.ttfb) {
+            navigationTimingHTML += `
+              <div class="metric">
+                <div class="name">Time to First Byte (TTFB)</div>
+                <div class="value">${metrics.ttfb.toFixed(2)} ms</div>
+              </div>
+            `;
+          }
+          
+          if (metrics.domContentLoaded) {
+            navigationTimingHTML += `
+              <div class="metric">
+                <div class="name">DOM Content Loaded</div>
+                <div class="value">${metrics.domContentLoaded.toFixed(2)} ms</div>
+              </div>
+            `;
+          }
+          
+          if (metrics.loadEvent) {
+            navigationTimingHTML += `
+              <div class="metric">
+                <div class="name">Load Event</div>
+                <div class="value">${metrics.loadEvent.toFixed(2)} ms</div>
+              </div>
+            `;
+          }
+          
+          if (navigationTimingHTML) {
+            navigationTimingEl.innerHTML = navigationTimingHTML;
+          }
+        }
+        
+        // Update Long Tasks display
+        function updateLongTasksDisplay(tasks) {
+          const longTasksEl = document.getElementById('long-tasks');
+          if (tasks.length > 0) {
+            let longTasksHTML = '';
+            
+            // Only show the last 5 long tasks
+            const lastTasks = tasks.slice(-5);
+            
+            lastTasks.forEach((task, index) => {
+              longTasksHTML += `
+                <div class="metric">
+                  <div class="name">Task ${index + 1}</div>
+                  <div class="value">Duration: ${task.duration.toFixed(2)} ms</div>
+                  <div class="value">Attribution: ${task.attribution || 'unknown'}</div>
+                </div>
+              `;
+            });
+            
+            longTasksEl.innerHTML = longTasksHTML;
+          }
+        }
+        
+        // Update Resource Timing display
+        function updateResourceTimingDisplay(resources) {
+          const resourceTimingEl = document.getElementById('resource-timing');
+          if (resources.length > 0) {
+            let resourcesHTML = '';
+            
+            // Only show the last 5 resources
+            const lastResources = resources.slice(-5);
+            
+            lastResources.forEach((resource, index) => {
+              const url = new URL(resource.name);
+              const filename = url.pathname.split('/').pop() || url.hostname;
+              
+              resourcesHTML += `
+                <div class="metric">
+                  <div class="name">${resource.initiatorType}: ${filename}</div>
+                  <div class="value">Duration: ${resource.duration.toFixed(2)} ms</div>
+                  <div class="value">Size: ${formatBytes(resource.transferSize || 0)}</div>
+                </div>
+              `;
+            });
+            
+            resourceTimingEl.innerHTML = resourcesHTML;
+          }
+        }
+        
+        // Format bytes
+        function formatBytes(bytes, decimals = 2) {
+          if (bytes === 0) return '0 Bytes';
+          
+          const k = 1024;
+          const dm = decimals < 0 ? 0 : decimals;
+          const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+          
+          const i = Math.floor(Math.log(bytes) / Math.log(k));
+          
+          return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+        }
+        
+        // Add event listeners for demo buttons
+        document.getElementById('generate-load').addEventListener('click', () => {
+          // Generate some long tasks
+          const start = performance.now();
+          
+          // Add some images to generate layout shifts
+          const imgContainer = document.getElementById('img-container');
+          imgContainer.innerHTML = '';
+          
+          for (let i = 0; i < 3; i++) {
+            const img = document.createElement('img');
+            img.src = `https://picsum.photos/300/200?random=${Math.random()}`;
+            imgContainer.appendChild(img);
+            
+            // Force layout shifts by changing image sizes after loading
+            img.onload = () => {
+              setTimeout(() => {
+                img.style.width = '350px';
+                img.style.height = '250px';
+              }, 500);
+            };
+          }
+          
+          // Create a long task
+          const blockTime = 100; // ms
+          const blockStart = performance.now();
+          while (performance.now() - blockStart < blockTime) {
+            // Blocking the main thread
+            const arr = [];
+            for (let i = 0; i < 10000; i++) {
+              arr.push(Math.random());
+            }
+            arr.sort();
+          }
+        });
+        
+        document.getElementById('clear-metrics').addEventListener('click', () => {
+          document.getElementById('img-container').innerHTML = '';
+          // Clear metrics display
+          document.getElementById('core-web-vitals').innerHTML = 'No data available yet';
+          document.getElementById('navigation-timing').innerHTML = 'No data available yet';
+          document.getElementById('long-tasks').innerHTML = 'No long tasks detected yet';
+          document.getElementById('resource-timing').innerHTML = 'No resources detected yet';
+          // Clear metrics in the library
+          perfMonitor.clearMetrics();
+        });
+      } catch (error) {
+        console.error('Error initializing PerfObserverKit:', error);
+        document.body.innerHTML = `<h1>Error initializing PerfObserverKit</h1><p>${error.message}</p>`;
+      }
     });
   </script>
 </body>
-</html> 
+</html>

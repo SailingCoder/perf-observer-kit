@@ -7,7 +7,8 @@ import {
   LongTaskMetrics,
   NavigationMetrics,
   BrowserInfo,
-  PerformanceMetrics
+  PerformanceMetrics,
+  MetricType
 } from './types';
 
 // 导出所有类型
@@ -20,12 +21,14 @@ export {
   LongTaskMetrics,
   NavigationMetrics,
   BrowserInfo,
-  PerformanceMetrics
+  PerformanceMetrics,
+  MetricType
 };
 
 // 为浏览器环境添加全局对象
 if (typeof window !== 'undefined') {
   (window as any).PerfObserverKit = {
-    PerfObserverKit
+    PerfObserverKit,
+    MetricType
   };
 } 

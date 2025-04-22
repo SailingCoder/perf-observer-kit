@@ -256,6 +256,36 @@ console.log(currentMetrics.browserInfo.browser);// Browser name and version
 console.log(currentMetrics.browserInfo.os);     // Operating system details
 ```
 
+## Troubleshooting
+
+### "PerfObserverKit is not defined" error
+
+If you get this error in the browser, ensure you're using the proper browser build:
+
+```html
+<!-- Always use the browser build for browser environments -->
+<script src="https://unpkg.com/perf-observer-kit@latest/dist/perf-observer-kit.browser.js"></script>
+
+<script>
+  // The library is available as a global PerfObserverKit object
+  const monitor = new PerfObserverKit.PerfObserverKit({
+    onMetrics: (metrics) => console.log('Performance metrics:', metrics)
+  });
+  
+  // MetricType enum is also available on the global object
+  console.log(PerfObserverKit.MetricType.WEB_VITALS);
+  
+  monitor.start();
+</script>
+```
+
+Don't use the non-browser build in direct browser code:
+
+```html
+<!-- ❌ DON'T use this in browser environments -->
+<script src="https://unpkg.com/perf-observer-kit@latest/dist/index.js"></script>
+```
+
 ## Browser Compatibility
 
 This library primarily relies on:
