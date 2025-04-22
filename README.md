@@ -1,262 +1,275 @@
-# perf-observer-kit
+# PerfObserverKit
 
-A comprehensive web performance monitoring library that focuses on collecting:
+![Version](https://img.shields.io/npm/v/perf-observer-kit)
+![License](https://img.shields.io/npm/l/perf-observer-kit)
 
-- Core Web Vitals (FCP, LCP, FID, CLS, INP)
-- Resource loading metrics
-- Long tasks
-- TTFB (Time to First Byte)
+A lightweight, flexible library for monitoring web performance metrics including Core Web Vitals, resource loading performance, long tasks, and navigation timing.
 
-[中文文档](./README_CN.md)
+[English](./README.md) | [中文文档](./README_CN.md)
 
-## Installation
+## 📋 Features
+
+- 📊 **Core Web Vitals** - Monitor FCP, LCP, FID, CLS, INP
+- 🔄 **Resource Timing** - Track loading performance of scripts, stylesheets, images
+- ⏱️ **Long Tasks** - Detect JavaScript tasks blocking the main thread
+- 🧭 **Navigation Timing** - Measure TTFB, DOM events, page load metrics
+- 🖥️ **Browser Info** - Collect browser, OS, and device details
+- 📱 **Responsive** - Works on mobile and desktop browsers
+- ⚡ **BFCache Support** - Properly handles back/forward cache scenarios
+- 📝 **Flexible Logging** - Configurable logging for debugging
+
+## 🚀 Quick Start
+
+### Installation
 
 ```bash
 npm install perf-observer-kit
 ```
 
-## Usage
+### Basic Usage
 
 ```javascript
 import { PerfObserverKit } from 'perf-observer-kit';
 
-// Initialize with default configuration
+// Create a performance monitor instance
 const perfMonitor = new PerfObserverKit({
-  onMetrics: (metrics) => {
-    console.log('Performance metrics:', metrics);
+  onMetrics: (type, metrics) => {
+    console.log(`Metrics updated [${type}]:`, metrics);
     // Send metrics to your analytics platform
-  }
+  },
+  // Enable all monitoring modules
+  coreWebVitals: true,
+  resourceTiming: true,
+  longTasks: true,
+  navigationTiming: true
 });
 
 // Start monitoring
 perfMonitor.start();
 
-// Stop monitoring when needed
-// perfMonitor.stop();
+// Access metrics anytime
+const currentMetrics = perfMonitor.getMetrics();
 ```
 
-### Using via CDN in the browser
+### Browser Usage via CDN
 
 ```html
-<!-- Via unpkg CDN -->
-<script src="https://unpkg.com/perf-observer-kit@latest/dist/perf-observer-kit.browser.min.js"></script>
-<!-- Or via jsDelivr -->
-<script src="https://cdn.jsdelivr.net/npm/perf-observer-kit@latest/dist/perf-observer-kit.browser.min.js"></script>
-
+<script src="https://unpkg.com/perf-observer-kit@latest/dist/perf-observer-kit.browser.js"></script>
 <script>
-  // Global object: window.PerfObserverKit
   const monitor = new PerfObserverKit.PerfObserverKit({
-    onMetrics: (metrics) => console.log('Performance metrics:', metrics)
+    onMetrics: (type, metrics) => console.log(`Metrics [${type}]:`, metrics)
   });
   
   monitor.start();
 </script>
 ```
 
-## Metrics Collected
+## 📖 Documentation
 
-### Core Web Vitals
+<details>
+<summary><b>Core Web Vitals Monitoring</b></summary>
 
-- **FCP (First Contentful Paint)**
-  - Measures the time it takes for the first content to be painted
-  - Good threshold: ≤ 1.8s
+```javascript
+const perfMonitor = new PerfObserverKit({
+  coreWebVitals: {
+    enabled: true,       // Enable Core Web Vitals monitoring
+    fcp: true,           // First Contentful Paint
+    lcp: true,           // Largest Contentful Paint
+    fid: true,           // First Input Delay
+    cls: true,           // Cumulative Layout Shift
+    inp: true            // Interaction to Next Paint
+  }
+});
+```
 
-- **LCP (Largest Contentful Paint)**
-  - Measures loading performance
-  - Good threshold: ≤ 2.5s
+**Thresholds:**
+- FCP: Good ≤ 1.8s, Poor > 3.0s
+- LCP: Good ≤ 2.5s, Poor > 4.0s
+- FID: Good ≤ 100ms, Poor > 300ms
+- CLS: Good ≤ 0.1, Poor > 0.25
+- INP: Good ≤ 200ms, Poor > 500ms
 
-- **FID (First Input Delay)**
-  - Measures interactivity
-  - Good threshold: ≤ 100ms
-  
-- **CLS (Cumulative Layout Shift)**
-  - Measures visual stability
-  - Good threshold: ≤ 0.1
+[Learn more about Core Web Vitals](https://web.dev/vitals/)
+</details>
 
-- **INP (Interaction to Next Paint)**
-  - Measures overall responsiveness
-  - Good threshold: ≤ 200ms
+<details>
+<summary><b>Resource Timing Monitoring</b></summary>
 
-### Resource Loading
+```javascript
+const perfMonitor = new PerfObserverKit({
+  resourceTiming: {
+    enabled: true,
+    excludedPatterns: [/analytics\.com/, /tracker/],  // Exclude analytics
+    allowedTypes: ['script', 'img', 'css', 'fetch'],  // Types to monitor
+    maxEntries: 500                                   // Max entries to store
+  }
+});
+```
 
-- Resource timing for scripts, stylesheets, images, etc.
-- Resource load success/failure
-- Resource size and load duration
+Captures details on resource loading:
+- Resource URL and type
+- Load duration and size
+- Time to First Byte (TTFB)
+- Connection and processing times
+</details>
 
-### Long Tasks
+<details>
+<summary><b>Long Tasks Monitoring</b></summary>
 
-- Detection of tasks taking longer than 50ms
-- Duration and attribution of long tasks
+```javascript
+const perfMonitor = new PerfObserverKit({
+  longTasks: {
+    enabled: true,      // Enable long tasks monitoring
+    threshold: 50,      // Task duration threshold in ms
+    maxEntries: 100     // Maximum entries to store
+  }
+});
+```
 
-### Navigation Timing
+Detects JavaScript tasks that block the main thread for more than 50ms, providing:
+- Task duration
+- Task attribution (script source)
+- Task start time
+</details>
 
+<details>
+<summary><b>Navigation Timing</b></summary>
+
+```javascript
+const perfMonitor = new PerfObserverKit({
+  navigationTiming: {
+    enabled: true,           // Enable navigation timing
+    includeRawTiming: false  // Include raw performance entries
+  }
+});
+```
+
+Measures key page load metrics:
 - TTFB (Time to First Byte)
 - DOM Content Loaded
 - Load Event
+- Network connection details
+</details>
 
-### Browser Information
-
-- Browser name, version, and vendor
-- Operating system name and version
-- Screen and window size
-- Device pixel ratio
-- Current page URL
-- Language and platform information
-
-**Note: Browser Information is the only module enabled by default.** All other modules (Core Web Vitals, Resource Timing, Long Tasks, and Navigation Timing) must be explicitly enabled.
-
-## Configuration Options
-
-The library supports a modular configuration system, allowing fine-grained control over each monitoring module.
-
-### Basic Configuration
+<details>
+<summary><b>Browser Information</b></summary>
 
 ```javascript
 const perfMonitor = new PerfObserverKit({
-  // Function to be called when metrics are collected
-  onMetrics: (metrics) => {},
-  
-  // Custom sampling rate (ms, 0 means no sampling)
-  samplingRate: 0,
-  
-  // Automatically start monitoring when initialized (default: false)
-  autoStart: false,
-  
-  // Important: Only Browser Information is enabled by default
-  // All other modules must be explicitly enabled as shown below
-  
-  // Enable/disable individual modules (simple boolean flags)
-  coreWebVitals: true, // Must be explicitly enabled
-  resourceTiming: true, // Must be explicitly enabled
-  longTasks: true, // Must be explicitly enabled
-  navigationTiming: true // Must be explicitly enabled
-});
-```
-
-### Advanced Configuration
-
-```javascript
-const perfMonitor = new PerfObserverKit({
-  onMetrics: (metrics) => {},
-  
-  // Core Web Vitals advanced configuration
-  coreWebVitals: {
-    enabled: true, // Must be explicitly enabled
-    // Each metric must be explicitly enabled
-    includeFCP: true, // Enable First Contentful Paint monitoring
-    includeLCP: true, // Enable Largest Contentful Paint monitoring
-    includeFID: true, // Enable First Input Delay monitoring 
-    includeCLS: true, // Enable Cumulative Layout Shift monitoring
-    includeINP: true  // Enable Interaction to Next Paint monitoring
-  },
-  
-  // Resource Timing advanced configuration
-  resourceTiming: {
-    enabled: true,
-    excludedPatterns: [/analytics/, /tracker/], // Exclude analytics/tracker scripts
-    allowedTypes: ['script', 'img', 'css', 'fetch', 'xmlhttprequest'],
-    maxEntries: 500 // Maximum number of resource entries to store
-  },
-  
-  // Long Tasks advanced configuration
-  longTasks: {
-    enabled: true,
-    threshold: 50, // Duration threshold in ms
-    maxEntries: 100 // Maximum number of long tasks to store
-  },
-  
-  // Navigation Timing advanced configuration  
-  navigationTiming: {
-    enabled: true,
-    includeRawTiming: true // Include raw performance timing data
-  },
-  
-  // Browser Information configuration
   browserInfo: {
-    enabled: true,
-    trackResize: true, // Update info when window size changes
-    includeOSDetails: true, // Include detailed OS information
-    includeSizeInfo: true // Include screen and window size information
+    enabled: true,             // Enabled by default
+    trackResize: true,         // Update on window resize
+    includeOSDetails: true,    // Include OS information
+    includeSizeInfo: true      // Include screen/window size
   }
 });
+```
 
-### Debugging & Logging
+**Note:** Browser Information is the only module enabled by default.
+</details>
 
-The library provides debugging and logging capabilities to help troubleshoot performance monitoring issues:
+<details>
+<summary><b>Full Configuration Options</b></summary>
 
 ```javascript
 const perfMonitor = new PerfObserverKit({
-  // Enable debug mode (sets log level to DEBUG)
-  debug: true,
+  // Metrics callback - called when metrics are updated
+  onMetrics: (type, metrics) => {
+    console.log(`Metrics updated [${type}]:`, metrics);
+  },
   
-  // Or set a specific log level:
-  // 0: NONE - No logging
-  // 1: ERROR - Only errors
-  // 2: WARN - Warnings and errors (default)
-  // 3: INFO - Informational messages, warnings, and errors
-  // 4: DEBUG - Detailed debug messages, informational messages, warnings, and errors
-  logLevel: 3,
+  // General settings
+  debug: false,              // Enable debug mode (verbose logging)
+  logLevel: 2,               // 0:None, 1:Error, 2:Warn, 3:Info, 4:Debug
+  autoStart: false,          // Start monitoring automatically
+  samplingRate: 0,           // Sampling rate (0-1), 0 = no sampling
   
-  // Auto-start monitoring when initialized (default: false)
-  // When true, monitoring starts immediately after instantiation
-  // When false, you need to call perfMonitor.start() manually
-  autoStart: true
-});
-
-// You can also set debug mode or log level after initialization
-perfMonitor.setDebugMode(true);  // Enable debug mode
-perfMonitor.setLogLevel(4);      // Set log level to DEBUG
-
-// Clear all collected metrics
-perfMonitor.clearMetrics();
-```
-
-When debug mode is enabled, the library will output detailed information about its operations to the console, which can be helpful for diagnosing issues.
-```
-
-### Legacy Configuration (Deprecated)
-
-```javascript
-// Legacy configuration is still supported for backward compatibility
-const perfMonitor = new PerfObserverKit({
-  enableCoreWebVitals: true,       // Deprecated, use coreWebVitals instead
-  enableResourceTiming: true,      // Deprecated, use resourceTiming instead
-  enableLongTasks: true,           // Deprecated, use longTasks instead
-  enableNavigationTiming: true,    // Deprecated, use navigationTiming instead
-  excludedResourcePatterns: [],    // Deprecated, use resourceTiming.excludedPatterns
-  allowedResourceTypes: []         // Deprecated, use resourceTiming.allowedTypes
+  // Module configurations
+  coreWebVitals: true,       // Enable Core Web Vitals (boolean or object)
+  resourceTiming: true,      // Enable Resource Timing (boolean or object)
+  longTasks: true,           // Enable Long Tasks (boolean or object)
+  navigationTiming: true,    // Enable Navigation Timing (boolean or object)
+  browserInfo: true          // Enable Browser Info (boolean or object)
 });
 ```
+</details>
 
-## Getting Metrics
+<details>
+<summary><b>Accessing Metrics</b></summary>
 
 ```javascript
 // Get current metrics at any time
-const currentMetrics = perfMonitor.getMetrics();
+const metrics = perfMonitor.getMetrics();
 
-// Core Web Vitals metrics
-console.log(currentMetrics.coreWebVitals.fcp);  // First Contentful Paint
-console.log(currentMetrics.coreWebVitals.lcp);  // Largest Contentful Paint
-console.log(currentMetrics.coreWebVitals.fid);  // First Input Delay
-console.log(currentMetrics.coreWebVitals.cls);  // Cumulative Layout Shift
-console.log(currentMetrics.coreWebVitals.inp);  // Interaction to Next Paint
+// Core Web Vitals
+console.log(metrics.coreWebVitals.fcp);  // First Contentful Paint
+console.log(metrics.coreWebVitals.lcp);  // Largest Contentful Paint
+console.log(metrics.coreWebVitals.fid);  // First Input Delay
+console.log(metrics.coreWebVitals.cls);  // Cumulative Layout Shift
+console.log(metrics.coreWebVitals.inp);  // Interaction to Next Paint
 
-// Resource metrics
-console.log(currentMetrics.resources);          // Array of resource metrics
+// Resources
+console.log(metrics.resources);          // Array of resource metrics
 
 // Long tasks
-console.log(currentMetrics.longTasks);          // Array of long tasks
+console.log(metrics.longTasks);          // Array of long tasks
 
-// Navigation metrics
-console.log(currentMetrics.navigation.ttfb);    // Time to First Byte
+// Navigation timing
+console.log(metrics.navigation.ttfb);    // Time to First Byte
+```
+</details>
 
-// Browser information
-console.log(currentMetrics.browserInfo);        // Browser and device information
-console.log(currentMetrics.browserInfo.browser);// Browser name and version
-console.log(currentMetrics.browserInfo.os);     // Operating system details
+<details>
+<summary><b>Logging and Debugging</b></summary>
+
+```javascript
+// Enable debug mode when initializing
+const perfMonitor = new PerfObserverKit({
+  debug: true                // Sets log level to DEBUG
+});
+
+// Adjust log level after initialization
+perfMonitor.setLogLevel(4);  // 4 = DEBUG (most verbose)
+perfMonitor.setDebugMode(true);  // Enable debug mode
+
+// Clear collected metrics
+perfMonitor.clearMetrics();
 ```
 
-## Troubleshooting
+Log levels:
+- 0: NONE - No logging
+- 1: ERROR - Only errors
+- 2: WARN - Warnings and errors (default)  
+- 3: INFO - Information, warnings, and errors
+- 4: DEBUG - Verbose debug information
+</details>
+
+<details>
+<summary><b>API Reference</b></summary>
+
+### Methods
+
+| Method | Description |
+|--------|-------------|
+| `start()` | Start monitoring performance metrics |
+| `stop()` | Stop monitoring performance metrics |
+| `getMetrics()` | Get currently collected metrics |
+| `clearMetrics()` | Clear all collected metrics |
+| `setLogLevel(level)` | Set logging level (0-4) |
+| `setDebugMode(enabled)` | Enable or disable debug mode |
+
+### Event Types
+
+`MetricType` enum values:
+- `WEB_VITALS` - Core Web Vitals metrics
+- `RESOURCES` - Resource timing metrics
+- `LONG_TASKS` - Long tasks metrics
+- `NAVIGATION` - Navigation timing metrics
+- `BROWSER_INFO` - Browser information metrics
+</details>
+
+<details>
+<summary><b>Troubleshooting</b></summary>
 
 ### "PerfObserverKit is not defined" error
 
@@ -265,18 +278,6 @@ If you get this error in the browser, ensure you're using the proper browser bui
 ```html
 <!-- Always use the browser build for browser environments -->
 <script src="https://unpkg.com/perf-observer-kit@latest/dist/perf-observer-kit.browser.js"></script>
-
-<script>
-  // The library is available as a global PerfObserverKit object
-  const monitor = new PerfObserverKit.PerfObserverKit({
-    onMetrics: (metrics) => console.log('Performance metrics:', metrics)
-  });
-  
-  // MetricType enum is also available on the global object
-  console.log(PerfObserverKit.MetricType.WEB_VITALS);
-  
-  monitor.start();
-</script>
 ```
 
 Don't use the non-browser build in direct browser code:
@@ -286,20 +287,26 @@ Don't use the non-browser build in direct browser code:
 <script src="https://unpkg.com/perf-observer-kit@latest/dist/index.js"></script>
 ```
 
-## Browser Compatibility
+### Browser Compatibility
 
 This library primarily relies on:
-
 - Performance API
 - PerformanceObserver
-- Various performance entry types: largest-contentful-paint, first-input, layout-shift, resource, longtask, navigation
+- Performance entry types: largest-contentful-paint, first-input, layout-shift, etc.
 
 For browsers that don't support certain performance metrics, the library gracefully degrades and only collects supported metrics.
+</details>
 
-## Examples
+## 📊 Examples
 
-Check the `examples` directory for complete examples.
+Check out the [examples directory](https://github.com/SailingCoder/perf-observer-kit/blob/main/examples) for complete usage examples:
 
-## License
+- [Basic Usage](https://github.com/SailingCoder/perf-observer-kit/blob/main/examples/basic-usage.html) - Simple implementation
+- [Advanced Usage](https://github.com/SailingCoder/perf-observer-kit/blob/main/examples/advanced-usage.html) - Advanced configuration
+- [Modular Configuration](https://github.com/SailingCoder/perf-observer-kit/blob/main/examples/modular-config.html) - Fine-grained module settings
+- [Logger Usage](https://github.com/SailingCoder/perf-observer-kit/blob/main/examples/logger-usage.html) - Logging configuration
+- [BFCache Testing](https://github.com/SailingCoder/perf-observer-kit/blob/main/examples/test-bfcache.html) - Back/forward cache handling
 
-MIT
+## 📄 License
+
+[MIT](LICENSE)
