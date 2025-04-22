@@ -1,7 +1,7 @@
 {
   "name": "perf-observer-kit",
   "version": "0.1.0",
-  "description": "A comprehensive web performance monitoring library focusing on Core Web Vitals and more",
+  "description": "A lightweight and flexible library for monitoring and analyzing web performance metrics including Core Web Vitals, user interactions, and custom performance events",
   "main": "dist/index.js",
   "module": "dist/index.js",
   "browser": "dist/perf-observer-kit.browser.js",
@@ -14,7 +14,6 @@
     "README.md"
   ],
   "scripts": {
-    "start": "npx http-server -o quick-test.html",
     "build": "node build.js",
     "dev": "tsc --watch",
     "lint": "eslint src --ext .ts"
