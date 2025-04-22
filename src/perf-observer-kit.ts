@@ -77,7 +77,7 @@ export class PerfObserverKit {
       samplingRate: options.samplingRate || 0, // 0表示不采样，报告所有指标
       
       // 核心Web指标配置 - 默认不启用，必须显式配置
-      coreWebVitals: this.normalizeModuleOptions(options.coreWebVitals, false),
+      coreWebVitals: this.normalizeCoreWebVitalsOptions(options.coreWebVitals),
       
       // 资源计时配置 - 默认不启用，必须显式配置
       resourceTiming: this.normalizeResourceOptions(options.resourceTiming, options),
@@ -211,6 +211,38 @@ export class PerfObserverKit {
         excludedPatterns: [],
         allowedTypes: ['script', 'link', 'img', 'css', 'font'],
         maxEntries: 1000
+      };
+    }
+  }
+  
+  /**
+   * 规范化核心Web指标选项
+   */
+  private normalizeCoreWebVitalsOptions(
+    options: boolean | CoreWebVitalsOptions | undefined
+  ): CoreWebVitalsOptions & { enabled: boolean } {
+    try {
+      // 首先使用通用方法获取基础选项
+      const normalizedOptions = this.normalizeModuleOptions(options, false);
+      
+      // 处理配置选项，设置默认值
+      return {
+        ...normalizedOptions,
+        fcp: normalizedOptions.fcp !== undefined ? normalizedOptions.fcp : false,
+        lcp: normalizedOptions.lcp !== undefined ? normalizedOptions.lcp : false,
+        fid: normalizedOptions.fid !== undefined ? normalizedOptions.fid : false,
+        cls: normalizedOptions.cls !== undefined ? normalizedOptions.cls : false,
+        inp: normalizedOptions.inp !== undefined ? normalizedOptions.inp : false
+      };
+    } catch (error) {
+      logger.error('规范化核心Web指标选项失败:', error);
+      return { 
+        enabled: false,
+        fcp: false,
+        lcp: false,
+        fid: false,
+        cls: false,
+        inp: false
       };
     }
   }
@@ -380,11 +412,12 @@ export class PerfObserverKit {
           this.notifyMetricsUpdate();
         },
         enabled: options.enabled,
-        includeFCP: options.includeFCP,
-        includeLCP: options.includeLCP,
-        includeFID: options.includeFID,
-        includeCLS: options.includeCLS,
-        includeINP: options.includeINP
+        fcp: options.fcp,
+        lcp: options.lcp,
+        fid: options.fid,
+        cls: options.cls,
+        inp: options.inp,
+        backgroundLoadThreshold: options.backgroundLoadThreshold
       });
       
       this.coreWebVitalsObserver.start();

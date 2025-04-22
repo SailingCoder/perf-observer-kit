@@ -40,13 +40,45 @@ export interface GlobalOptions {
 
 // 核心Web指标观察者选项
 export interface CoreWebVitalsOptions {
-  enabled?: boolean; // 是否启用
-  // 添加核心Web指标特定配置项
-  includeCLS?: boolean; // 是否包含CLS指标
-  includeFID?: boolean; // 是否包含FID指标
-  includeLCP?: boolean; // 是否包含LCP指标
-  includeFCP?: boolean; // 是否包含FCP指标
-  includeINP?: boolean; // 是否包含INP指标
+  /** 是否启用核心Web指标监控 */
+  enabled?: boolean;
+  
+  /** 
+   * 是否监控累积布局偏移(CLS)指标
+   * 衡量页面加载过程中的视觉稳定性
+   */
+  cls?: boolean;
+  
+  /** 
+   * 是否监控首次输入延迟(FID)指标
+   * 测量从用户第一次与页面交互到浏览器实际能够响应交互的时间
+   */
+  fid?: boolean;
+  
+  /** 
+   * 是否监控最大内容绘制(LCP)指标
+   * 测量页面主要内容加载完成的时间
+   */
+  lcp?: boolean;
+  
+  /** 
+   * 是否监控首次内容绘制(FCP)指标
+   * 测量从页面开始加载到页面内容的任何部分在屏幕上完成渲染的时间
+   */
+  fcp?: boolean;
+  
+  /** 
+   * 是否监控交互到下一次绘制(INP)指标
+   * 测量页面响应用户交互的速度
+   */
+  inp?: boolean;
+  
+  /** 
+   * 后台加载超时阈值(毫秒)
+   * 控制在后台加载页面变为可见时，LCP值的处理方式
+   * 默认为5000ms
+   */
+  backgroundLoadThreshold?: number;
 }
 
 // 资源计时观察者选项

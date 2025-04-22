@@ -29,45 +29,49 @@ export class CoreWebVitalsObserver {
     this.options = {
       // 默认不启用，必须显式配置
       enabled: options.enabled !== undefined ? options.enabled : false,
+      
       // 所有指标默认都不启用，必须显式配置启用
-      includeFCP: options.includeFCP !== undefined ? options.includeFCP : false,
-      includeLCP: options.includeLCP !== undefined ? options.includeLCP : false,
-      includeFID: options.includeFID !== undefined ? options.includeFID : false,
-      includeCLS: options.includeCLS !== undefined ? options.includeCLS : false,
-      includeINP: options.includeINP !== undefined ? options.includeINP : false,
+      fcp: options.fcp !== undefined ? options.fcp : false,
+      lcp: options.lcp !== undefined ? options.lcp : false,
+      fid: options.fid !== undefined ? options.fid : false,
+      cls: options.cls !== undefined ? options.cls : false,
+      inp: options.inp !== undefined ? options.inp : false,
+      
+      // 其他选项
+      backgroundLoadThreshold: options.backgroundLoadThreshold,
+      
       ...options
     };
   }
   
   /**
    * 开始监控所有核心Web指标
-   * 暂时开放FCP和LCP
    */
   start(): void {
     // 启动FCP监测
-    if (this.options.includeFCP) {
+    if (this.options.fcp) {
       this.startFCPMonitoring();
     }
     
     // 启动LCP监测
-    if (this.options.includeLCP) {
+    if (this.options.lcp) {
       this.startLCPMonitoring();
     }
     
-    // // 启动FID监测
-    // if (this.options.includeFID) {
-    //   this.startFIDMonitoring();
-    // }
+    // 启动FID监测
+    if (this.options.fid) {
+      this.startFIDMonitoring();
+    }
     
-    // // 启动CLS监测
-    // if (this.options.includeCLS) {
-    //   this.startCLSMonitoring();
-    // }
+    // 启动CLS监测
+    if (this.options.cls) {
+      this.startCLSMonitoring();
+    }
     
-    // // 启动INP监测
-    // if (this.options.includeINP) {
-    //   this.startINPMonitoring();
-    // }
+    // 启动INP监测
+    if (this.options.inp) {
+      this.startINPMonitoring();
+    }
   }
   
   /**
