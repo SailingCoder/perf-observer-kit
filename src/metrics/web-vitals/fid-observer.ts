@@ -29,7 +29,7 @@ export class FIDObserver extends BaseObserver {
               name: 'FID',
               value: fidEntry.processingStart! - fidEntry.startTime,
               unit: 'ms',
-              timestamp: performance.now(),
+              timestamp: new Date().getTime(),
             };
             
             // FID rating thresholds (ms)

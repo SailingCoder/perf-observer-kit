@@ -118,7 +118,7 @@
         
         // Initialize PerfObserverKit with selective monitoring
         this.perfObserver = new PerfObserverKit.PerfObserverKit({
-          onMetrics: (metrics) => this.handleMetricsUpdate(metrics),
+          onMetrics: (type, metrics) => this.handleMetricsUpdate(type, metrics),
           coreWebVitals: {
             enabled: true
           },
@@ -158,81 +158,111 @@
         logToUI('Performance monitoring stopped');
       }
       
-      handleMetricsUpdate(metrics) {
-        // Process Core Web Vitals
-        if (metrics.coreWebVitals.fcp && !this.fcpReported) {
-          this.fcpReported = true;
-          this.analytics.queueMetric('web_vitals', {
-            name: 'FCP',
-            value: metrics.coreWebVitals.fcp.value,
-            rating: metrics.coreWebVitals.fcp.rating
-          });
-          
-          logToUI(`FCP: ${metrics.coreWebVitals.fcp.value.toFixed(0)}ms (${metrics.coreWebVitals.fcp.rating})`);
-        }
-        
-        if (metrics.coreWebVitals.lcp && this.lastLCP !== metrics.coreWebVitals.lcp.value) {
-          this.lastLCP = metrics.coreWebVitals.lcp.value;
-          this.analytics.queueMetric('web_vitals', {
-            name: 'LCP',
-            value: this.lastLCP,
-            rating: metrics.coreWebVitals.lcp.rating
-          });
-          
-          logToUI(`LCP: ${this.lastLCP.toFixed(0)}ms (${metrics.coreWebVitals.lcp.rating})`);
-        }
-        
-        if (metrics.coreWebVitals.fid && !this.fidReported) {
-          this.fidReported = true;
-          this.analytics.queueMetric('web_vitals', {
-            name: 'FID',
-            value: metrics.coreWebVitals.fid.value,
-            rating: metrics.coreWebVitals.fid.rating
-          });
-          
-          logToUI(`FID: ${metrics.coreWebVitals.fid.value.toFixed(0)}ms (${metrics.coreWebVitals.fid.rating})`);
-        }
-        
-        if (metrics.coreWebVitals.cls && 
-            (!this.lastCLS || Math.abs(this.lastCLS - metrics.coreWebVitals.cls.value) > 0.01)) {
-          this.lastCLS = metrics.coreWebVitals.cls.value;
-          this.analytics.queueMetric('web_vitals', {
-            name: 'CLS',
-            value: this.lastCLS,
-            rating: metrics.coreWebVitals.cls.rating
-          });
-          
-          logToUI(`CLS: ${this.lastCLS.toFixed(3)} (${metrics.coreWebVitals.cls.rating})`);
-        }
-        
-        // Handle new long tasks
-        if (metrics.longTasks.length > this.lastLongTasksCount) {
-          const newTasks = metrics.longTasks.slice(this.lastLongTasksCount);
-          this.lastLongTasksCount = metrics.longTasks.length;
-          
-          for (const task of newTasks) {
-            if (task.duration > 100) { // Only report significant long tasks
-              this.analytics.queueMetric('long_task', {
-                duration: task.duration,
-                startTime: task.startTime,
-                attribution: task.attribution
+      handleMetricsUpdate(type, metrics) {
+        // 根据指标类型处理不同的指标
+        switch(type) {
+          case PerfObserverKit.MetricType.WEB_VITALS:
+            // 处理核心Web指标
+            if (metrics.fcp && !this.fcpReported) {
+              this.fcpReported = true;
+              this.analytics.queueMetric('web_vitals', {
+                name: 'FCP',
+                value: metrics.fcp.value,
+                rating: metrics.fcp.rating
               });
               
-              logToUI(`Long Task: ${task.duration.toFixed(0)}ms`);
+              logToUI(`FCP: ${metrics.fcp.value.toFixed(0)}ms (${metrics.fcp.rating})`);
             }
-          }
-        }
-        
-        // Navigation timing (only report once)
-        if (metrics.navigation.ttfb && !this.ttfbReported) {
-          this.ttfbReported = true;
-          this.analytics.queueMetric('navigation', {
-            ttfb: metrics.navigation.ttfb.value,
-            domContentLoaded: metrics.navigation.domContentLoaded?.value,
-            loadEvent: metrics.navigation.loadEvent?.value
-          });
-          
-          logToUI(`TTFB: ${metrics.navigation.ttfb.value.toFixed(0)}ms (${metrics.navigation.ttfb.rating})`);
+            
+            if (metrics.lcp && this.lastLCP !== metrics.lcp.value) {
+              this.lastLCP = metrics.lcp.value;
+              this.analytics.queueMetric('web_vitals', {
+                name: 'LCP',
+                value: this.lastLCP,
+                rating: metrics.lcp.rating
+              });
+              
+              logToUI(`LCP: ${this.lastLCP.toFixed(0)}ms (${metrics.lcp.rating})`);
+            }
+            
+            if (metrics.fid && !this.fidReported) {
+              this.fidReported = true;
+              this.analytics.queueMetric('web_vitals', {
+                name: 'FID',
+                value: metrics.fid.value,
+                rating: metrics.fid.rating
+              });
+              
+              logToUI(`FID: ${metrics.fid.value.toFixed(0)}ms (${metrics.fid.rating})`);
+            }
+            
+            if (metrics.cls && 
+                (!this.lastCLS || Math.abs(this.lastCLS - metrics.cls.value) > 0.01)) {
+              this.lastCLS = metrics.cls.value;
+              this.analytics.queueMetric('web_vitals', {
+                name: 'CLS',
+                value: this.lastCLS,
+                rating: metrics.cls.rating
+              });
+              
+              logToUI(`CLS: ${this.lastCLS.toFixed(3)} (${metrics.cls.rating})`);
+            }
+            break;
+            
+          case PerfObserverKit.MetricType.NAVIGATION:
+            // 处理导航指标
+            if (metrics.ttfb && !this.navigationReported) {
+              this.navigationReported = true;
+              this.analytics.queueMetric('navigation', {
+                ttfb: metrics.ttfb,
+                domComplete: metrics.domComplete,
+                loadEvent: metrics.loadEvent
+              });
+              
+              logToUI(`TTFB: ${metrics.ttfb}ms, DOM Complete: ${metrics.domComplete}ms`);
+            }
+            break;
+            
+          case PerfObserverKit.MetricType.LONG_TASKS:
+            // 处理长任务
+            if (metrics.length > 0) {
+              const longestTask = metrics.reduce((prev, current) => 
+                (prev.duration > current.duration) ? prev : current);
+              
+              this.analytics.queueMetric('long_task', {
+                duration: longestTask.duration,
+                startTime: longestTask.startTime,
+                count: metrics.length
+              });
+              
+              logToUI(`Long task detected: ${longestTask.duration.toFixed(0)}ms`);
+            }
+            break;
+            
+          case PerfObserverKit.MetricType.RESOURCES:
+            // 处理资源计时
+            if (metrics.length > 0) {
+              // 只处理最近加载的资源
+              const recentResources = metrics.slice(0, 5);
+              
+              this.analytics.queueMetric('resources', {
+                count: metrics.length,
+                types: recentResources.map(r => r.type),
+                totalSize: recentResources.reduce((sum, r) => sum + (r.decodedBodySize || 0), 0)
+              });
+              
+              for (const resource of recentResources) {
+                if (resource.transferSize > 100000) { // 100KB
+                  logToUI(`Large resource: ${resource.name} (${Math.round(resource.transferSize / 1024)}KB)`);
+                }
+              }
+            }
+            break;
+            
+          case PerfObserverKit.MetricType.BROWSER_INFO:
+            // 处理浏览器信息
+            this.analytics.queueMetric('browser_info', metrics);
+            break;
         }
       }
       

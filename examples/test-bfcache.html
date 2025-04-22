@@ -105,13 +105,18 @@
         
         // 创建 PerfObserverKit 实例
         perfKit = new PerfObserverKit.PerfObserverKit({
-          onMetrics: function(metrics) {
-            document.getElementById('metrics').textContent = JSON.stringify(metrics, null, 2);
-            
-            // 如果有LCP更新，记录日志
-            if (metrics.coreWebVitals && metrics.coreWebVitals.lcp) {
-              log(`LCP 更新: ${metrics.coreWebVitals.lcp.value.toFixed(2)}ms (${metrics.coreWebVitals.lcp.rating || 'unknown'})`);
+          onMetrics: function(type, metrics) {
+            // 根据指标类型处理不同指标
+            if (type === PerfObserverKit.MetricType.WEB_VITALS) {
+              // 核心Web指标更新
+              if (metrics.lcp) {
+                log(`LCP 更新: ${metrics.lcp.value.toFixed(2)}ms (${metrics.lcp.rating || 'unknown'})`);
+              }
             }
+            
+            // 更新显示的指标信息
+            document.getElementById('metrics').textContent = 
+              `指标类型: ${type}\n` + JSON.stringify(metrics, null, 2);
           }
         });
         

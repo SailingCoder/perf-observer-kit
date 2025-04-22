@@ -156,7 +156,8 @@ export class ResourceTimingObserver {
       sslTime,
       requestTime,
       responseTime,
-      networkMetrics
+      networkMetrics,
+      timestamp: new Date().getTime()
     };
   }
   

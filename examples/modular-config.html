@@ -270,8 +270,8 @@
     
     function getConfiguration() {
       return {
-        onMetrics: (metrics) => {
-          updateMetricsDisplay(metrics);
+        onMetrics: (type, metrics) => {
+          updateMetricsDisplay(type, metrics);
         },
         
         // Core Web Vitals configuration
@@ -357,164 +357,174 @@
       return rating;
     }
     
-    function updateMetricsDisplay(metrics) {
-      // Update Core Web Vitals
-      if (metrics.coreWebVitals && document.getElementById('coreWebVitals').checked) {
-        let html = '';
-        
-        if (metrics.coreWebVitals.fcp && document.getElementById('lcp').checked) {
-          const fcp = metrics.coreWebVitals.fcp;
-          html += `<div class="metric-value">
-            <strong>FCP:</strong> 
-            <span class="${getRatingClass(fcp.rating)}">${formatValue(fcp.value)}</span>
-            ${fcp.rating ? `(${fcp.rating})` : ''}
-          </div>`;
-        }
-        
-        if (metrics.coreWebVitals.lcp && document.getElementById('lcp').checked) {
-          const lcp = metrics.coreWebVitals.lcp;
-          html += `<div class="metric-value">
-            <strong>LCP:</strong> 
-            <span class="${getRatingClass(lcp.rating)}">${formatValue(lcp.value)}</span>
-            ${lcp.rating ? `(${lcp.rating})` : ''}
-          </div>`;
-        }
-        
-        if (metrics.coreWebVitals.fid && document.getElementById('fid').checked) {
-          const fid = metrics.coreWebVitals.fid;
-          html += `<div class="metric-value">
-            <strong>FID:</strong> 
-            <span class="${getRatingClass(fid.rating)}">${formatValue(fid.value)}</span>
-            ${fid.rating ? `(${fid.rating})` : ''}
-          </div>`;
-        }
-        
-        if (metrics.coreWebVitals.cls && document.getElementById('cls').checked) {
-          const cls = metrics.coreWebVitals.cls;
-          html += `<div class="metric-value">
-            <strong>CLS:</strong> 
-            <span class="${getRatingClass(cls.rating)}">${formatValue(cls.value, '')}</span>
-            ${cls.rating ? `(${cls.rating})` : ''}
-          </div>`;
-        }
-        
-        if (metrics.coreWebVitals.inp && document.getElementById('inp').checked) {
-          const inp = metrics.coreWebVitals.inp;
-          html += `<div class="metric-value">
-            <strong>INP:</strong> 
-            <span class="${getRatingClass(inp.rating)}">${formatValue(inp.value)}</span>
-            ${inp.rating ? `(${inp.rating})` : ''}
-          </div>`;
-        }
-        
-        document.getElementById('coreWebVitalsMetrics').innerHTML = html || 'No data available yet';
-      }
-      
-      // Update Resource Timing
-      if (metrics.resources && document.getElementById('resourceTiming').checked) {
-        const resources = metrics.resources.slice(0, 10); // Display only first 10 resources
-        let html = '';
-        
-        if (resources.length > 0) {
-          html += '<table class="metrics-table"><tr><th>Resource</th><th>Type</th><th>Duration</th></tr>';
+    function updateMetricsDisplay(type, metrics) {
+      switch(type) {
+        case PerfObserverKit.MetricType.WEB_VITALS:
+          // 更新核心Web指标
+          if (document.getElementById('coreWebVitals').checked) {
+            let html = '';
+            
+            if (metrics.fcp && document.getElementById('lcp').checked) {
+              const fcp = metrics.fcp;
+              html += `<div class="metric-value">
+                <strong>FCP:</strong> 
+                <span class="${getRatingClass(fcp.rating)}">${formatValue(fcp.value)}</span>
+                ${fcp.rating ? `(${fcp.rating})` : ''}
+              </div>`;
+            }
+            
+            if (metrics.lcp && document.getElementById('lcp').checked) {
+              const lcp = metrics.lcp;
+              html += `<div class="metric-value">
+                <strong>LCP:</strong> 
+                <span class="${getRatingClass(lcp.rating)}">${formatValue(lcp.value)}</span>
+                ${lcp.rating ? `(${lcp.rating})` : ''}
+              </div>`;
+            }
+            
+            if (metrics.fid && document.getElementById('fid').checked) {
+              const fid = metrics.fid;
+              html += `<div class="metric-value">
+                <strong>FID:</strong> 
+                <span class="${getRatingClass(fid.rating)}">${formatValue(fid.value)}</span>
+                ${fid.rating ? `(${fid.rating})` : ''}
+              </div>`;
+            }
+            
+            if (metrics.cls && document.getElementById('cls').checked) {
+              const cls = metrics.cls;
+              html += `<div class="metric-value">
+                <strong>CLS:</strong> 
+                <span class="${getRatingClass(cls.rating)}">${formatValue(cls.value, '')}</span>
+                ${cls.rating ? `(${cls.rating})` : ''}
+              </div>`;
+            }
+            
+            if (metrics.inp && document.getElementById('inp').checked) {
+              const inp = metrics.inp;
+              html += `<div class="metric-value">
+                <strong>INP:</strong> 
+                <span class="${getRatingClass(inp.rating)}">${formatValue(inp.value)}</span>
+                ${inp.rating ? `(${inp.rating})` : ''}
+              </div>`;
+            }
+            
+            document.getElementById('coreWebVitalsMetrics').innerHTML = html || 'No data available yet';
+          }
+          break;
           
-          resources.forEach(resource => {
-            const shortName = resource.name.split('/').pop();
-            html += `<tr>
-              <td title="${resource.name}">${shortName}</td>
-              <td>${resource.initiatorType}</td>
-              <td>${formatValue(resource.duration)}</td>
-            </tr>`;
-          });
+        case PerfObserverKit.MetricType.RESOURCES:
+          // 更新资源计时
+          if (document.getElementById('resourceTiming').checked) {
+            const resources = metrics.slice(0, 10); // 仅显示前10个资源
+            let html = '';
+            
+            if (resources.length > 0) {
+              html += '<table class="metrics-table"><tr><th>Resource</th><th>Type</th><th>Duration</th></tr>';
+              
+              resources.forEach(resource => {
+                const shortName = resource.name.split('/').pop();
+                html += `<tr>
+                  <td title="${resource.name}">${shortName}</td>
+                  <td>${resource.initiatorType}</td>
+                  <td>${formatValue(resource.duration)}</td>
+                </tr>`;
+              });
+              
+              html += '</table>';
+              html += `<div class="metric-note">Showing ${resources.length} of ${perfMonitor.getMetrics().resources.length} resources</div>`;
+            }
+            
+            document.getElementById('resourceTimingMetrics').innerHTML = html || 'No resources loaded yet';
+          }
+          break;
           
-          html += '</table>';
-          html += `<div class="metric-note">Showing ${resources.length} of ${metrics.resources.length} resources</div>`;
-        }
-        
-        document.getElementById('resourceTimingMetrics').innerHTML = html || 'No resources loaded yet';
-      }
-      
-      // Update Long Tasks
-      if (metrics.longTasks && document.getElementById('longTasks').checked) {
-        const longTasks = metrics.longTasks;
-        let html = '';
-        
-        if (longTasks.length > 0) {
-          html += '<table class="metrics-table"><tr><th>Duration</th><th>Start Time</th></tr>';
+        case PerfObserverKit.MetricType.LONG_TASKS:
+          // 更新长任务
+          if (document.getElementById('longTasks').checked) {
+            const longTasks = metrics;
+            let html = '';
+            
+            if (longTasks.length > 0) {
+              html += '<table class="metrics-table"><tr><th>Duration</th><th>Start Time</th></tr>';
+              
+              longTasks.forEach(task => {
+                html += `<tr>
+                  <td>${formatValue(task.duration)}</td>
+                  <td>${formatValue(task.startTime)}</td>
+                </tr>`;
+              });
+              
+              html += '</table>';
+            }
+            
+            document.getElementById('longTasksMetrics').innerHTML = html || 'No long tasks detected yet';
+          }
+          break;
           
-          longTasks.forEach(task => {
-            html += `<tr>
-              <td>${formatValue(task.duration)}</td>
-              <td>${formatValue(task.startTime)}</td>
-            </tr>`;
-          });
+        case PerfObserverKit.MetricType.NAVIGATION:
+          // 更新导航计时
+          if (document.getElementById('navigationTiming').checked) {
+            let html = '';
+            
+            if (metrics.ttfb) {
+              html += `<div class="metric-value">
+                <strong>TTFB:</strong> ${formatValue(metrics.ttfb)}
+              </div>`;
+            }
+            
+            if (metrics.domContentLoaded) {
+              html += `<div class="metric-value">
+                <strong>DOMContentLoaded:</strong> ${formatValue(metrics.domContentLoaded)}
+              </div>`;
+            }
+            
+            if (metrics.loadEvent) {
+              html += `<div class="metric-value">
+                <strong>Load:</strong> ${formatValue(metrics.loadEvent)}
+              </div>`;
+            }
+            
+            document.getElementById('navigationTimingMetrics').innerHTML = html || 'No navigation timing data available yet';
+          }
+          break;
           
-          html += '</table>';
-        }
-        
-        document.getElementById('longTasksMetrics').innerHTML = html || 'No long tasks detected yet';
-      }
-      
-      // Update Navigation Timing
-      if (metrics.navigation && document.getElementById('navigationTiming').checked) {
-        let html = '';
-        
-        if (metrics.navigation.ttfb) {
-          html += `<div class="metric-value">
-            <strong>TTFB:</strong> ${formatValue(metrics.navigation.ttfb)}
-          </div>`;
-        }
-        
-        if (metrics.navigation.domContentLoaded) {
-          html += `<div class="metric-value">
-            <strong>DOMContentLoaded:</strong> ${formatValue(metrics.navigation.domContentLoaded)}
-          </div>`;
-        }
-        
-        if (metrics.navigation.loadEvent) {
-          html += `<div class="metric-value">
-            <strong>Load:</strong> ${formatValue(metrics.navigation.loadEvent)}
-          </div>`;
-        }
-        
-        document.getElementById('navigationTimingMetrics').innerHTML = html || 'No navigation timing data available yet';
-      }
-      
-      // Update Browser Information (always enabled)
-      if (metrics.browserInfo) {
-        let html = '';
-        
-        if (metrics.browserInfo.browser) {
-          html += `<div class="metric-value">
-            <strong>Browser:</strong> ${metrics.browserInfo.browser.name} ${metrics.browserInfo.browser.version}
-          </div>`;
-        }
-        
-        if (metrics.browserInfo.os) {
-          html += `<div class="metric-value">
-            <strong>OS:</strong> ${metrics.browserInfo.os.name} ${metrics.browserInfo.os.version}
-          </div>`;
-        }
-        
-        if (metrics.browserInfo.screenSize) {
-          html += `<div class="metric-value">
-            <strong>Screen:</strong> ${metrics.browserInfo.screenSize.width} x ${metrics.browserInfo.screenSize.height}
-          </div>`;
-        }
-        
-        if (metrics.browserInfo.windowSize) {
-          html += `<div class="metric-value">
-            <strong>Window:</strong> ${metrics.browserInfo.windowSize.width} x ${metrics.browserInfo.windowSize.height}
-          </div>`;
-        }
-        
-        if (metrics.browserInfo.devicePixelRatio) {
-          html += `<div class="metric-value">
-            <strong>Pixel Ratio:</strong> ${metrics.browserInfo.devicePixelRatio}
-          </div>`;
-        }
-        
-        document.getElementById('browserInfoMetrics').innerHTML = html || 'No browser information available yet';
+        case PerfObserverKit.MetricType.BROWSER_INFO:
+          // 更新浏览器信息（始终启用）
+          let html = '';
+          
+          if (metrics.browser) {
+            html += `<div class="metric-value">
+              <strong>Browser:</strong> ${metrics.browser.name} ${metrics.browser.version}
+            </div>`;
+          }
+          
+          if (metrics.os) {
+            html += `<div class="metric-value">
+              <strong>OS:</strong> ${metrics.os.name} ${metrics.os.version}
+            </div>`;
+          }
+          
+          if (metrics.screenSize) {
+            html += `<div class="metric-value">
+              <strong>Screen:</strong> ${metrics.screenSize.width} x ${metrics.screenSize.height}
+            </div>`;
+          }
+          
+          if (metrics.windowSize) {
+            html += `<div class="metric-value">
+              <strong>Window:</strong> ${metrics.windowSize.width} x ${metrics.windowSize.height}
+            </div>`;
+          }
+          
+          if (metrics.devicePixelRatio) {
+            html += `<div class="metric-value">
+              <strong>Pixel Ratio:</strong> ${metrics.devicePixelRatio}
+            </div>`;
+          }
+          
+          document.getElementById('browserInfoMetrics').innerHTML = html || 'No browser information available yet';
+          break;
       }
     }
     

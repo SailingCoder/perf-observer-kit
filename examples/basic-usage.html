@@ -15,32 +15,40 @@
   <script>
     // Initialize the performance monitoring
     const perfMonitor = new PerfObserverKit.PerfObserverKit({
-      onMetrics: (metrics) => {
-        console.log('Performance metrics updated:', metrics);
+      onMetrics: (type, metrics) => {
+        console.log(`Performance metrics updated - Type: ${type}`, metrics);
         
-        // Log browser information (default enabled)
-        console.log('Browser Info:', metrics.browserInfo);
-        
-        // Log Core Web Vitals when they change
-        if (metrics.coreWebVitals.fcp) {
-          console.log(`FCP: ${metrics.coreWebVitals.fcp.value.toFixed(2)}ms (${metrics.coreWebVitals.fcp.rating})`);
-        }
-        
-        if (metrics.coreWebVitals.lcp) {
-          console.log(`LCP: ${metrics.coreWebVitals.lcp.value.toFixed(2)}ms (${metrics.coreWebVitals.lcp.rating})`);
-        }
-        
-        if (metrics.coreWebVitals.fid) {
-          console.log(`FID: ${metrics.coreWebVitals.fid.value.toFixed(2)}ms (${metrics.coreWebVitals.fid.rating})`);
-        }
-        
-        if (metrics.coreWebVitals.cls) {
-          console.log(`CLS: ${metrics.coreWebVitals.cls.value.toFixed(4)} (${metrics.coreWebVitals.cls.rating})`);
-        }
-        
-        // Log TTFB when available
-        if (metrics.navigation.ttfb) {
-          console.log(`TTFB: ${metrics.navigation.ttfb}ms`);
+        // 根据指标类型进行不同处理
+        switch(type) {
+          case PerfObserverKit.MetricType.BROWSER_INFO:
+            console.log('Browser Info:', metrics);
+            break;
+          
+          case PerfObserverKit.MetricType.WEB_VITALS:
+            // 处理核心Web指标
+            if (metrics.fcp) {
+              console.log(`FCP: ${metrics.fcp.value.toFixed(2)}ms (${metrics.fcp.rating})`);
+            }
+            
+            if (metrics.lcp) {
+              console.log(`LCP: ${metrics.lcp.value.toFixed(2)}ms (${metrics.lcp.rating})`);
+            }
+            
+            if (metrics.fid) {
+              console.log(`FID: ${metrics.fid.value.toFixed(2)}ms (${metrics.fid.rating})`);
+            }
+            
+            if (metrics.cls) {
+              console.log(`CLS: ${metrics.cls.value.toFixed(4)} (${metrics.cls.rating})`);
+            }
+            break;
+          
+          case PerfObserverKit.MetricType.NAVIGATION:
+            // 处理导航指标
+            if (metrics.ttfb) {
+              console.log(`TTFB: ${metrics.ttfb}ms`);
+            }
+            break;
         }
       },
       

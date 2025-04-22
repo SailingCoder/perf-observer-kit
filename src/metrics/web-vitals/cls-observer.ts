@@ -182,7 +182,7 @@ export class CLSObserver extends BaseObserver {
       name: 'CLS',
       value: clsValue,
       unit: '', // CLS没有单位，是无量纲数值
-      timestamp: performance.now(),
+      timestamp: new Date().getTime(),
       url: typeof window !== 'undefined' ? window.location.href : undefined,
       // 添加网络信息和其他上下文
       context: {

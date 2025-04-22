@@ -184,7 +184,7 @@ export class INPObserver extends BaseObserver {
         name: 'INP',
         value: inpValue,
         unit: 'ms',
-        timestamp: performance.now(),
+        timestamp: new Date().getTime(),
         url: typeof window !== 'undefined' ? window.location.href : undefined,
         context: {
           interactionCount: this.interactionEvents.length,

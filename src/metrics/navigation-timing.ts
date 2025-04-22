@@ -1,7 +1,6 @@
 import { MetricData, NavigationMetrics } from '../types';
 import { calculateTime } from '../utils/time';
 import { NetworkMetricsCollector } from '../utils/network-metrics';
-import { BrowserInfoCollector } from '../utils/browser-info';
 import { NavigationTimingObserverOptions } from './web-vitals/types';
 import { logger } from '../utils/logger';
 
@@ -185,7 +184,8 @@ export class NavigationTimingObserver {
       requestTime: requestTime,
       responseTime: responseTime,
       url: pageUrl,
-      networkInfo
+      networkInfo,
+      timestamp: new Date().getTime()
     };
     
     // 根据配置决定是否包含原始计时数据

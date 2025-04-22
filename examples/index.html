@@ -114,22 +114,61 @@
     document.addEventListener('DOMContentLoaded', () => {
       // Initialize the performance monitoring
       const perfMonitor = new PerfObserverKit.PerfObserverKit({
-        onMetrics: (metrics) => {
-          updateMetricsDisplay(metrics);
+        onMetrics: (type, metrics) => {
+          updateMetricsDisplay(type, metrics);
         }
       });
       
       // Start monitoring
       perfMonitor.start();
       
+      // 保存所有指标数据
+      const allMetrics = {
+        coreWebVitals: {},
+        resources: [],
+        longTasks: [],
+        navigation: {}
+      };
+      
       // Update the metrics display
-      function updateMetricsDisplay(metrics) {
-        // Update Core Web Vitals
+      function updateMetricsDisplay(type, metrics) {
+        // 根据指标类型更新不同的指标数据
+        switch(type) {
+          case PerfObserverKit.MetricType.WEB_VITALS:
+            // 更新核心Web指标
+            allMetrics.coreWebVitals = { ...allMetrics.coreWebVitals, ...metrics };
+            updateCoreWebVitalsDisplay(metrics);
+            break;
+            
+          case PerfObserverKit.MetricType.RESOURCES:
+            // 更新资源计时
+            allMetrics.resources.push(...metrics);
+            allMetrics.resources = allMetrics.resources.slice(-20); // 只保留最近20个资源
+            updateResourceTimingDisplay(allMetrics.resources);
+            break;
+            
+          case PerfObserverKit.MetricType.LONG_TASKS:
+            // 更新长任务
+            allMetrics.longTasks.push(...metrics);
+            allMetrics.longTasks = allMetrics.longTasks.slice(-10); // 只保留最近10个长任务
+            updateLongTasksDisplay(allMetrics.longTasks);
+            break;
+            
+          case PerfObserverKit.MetricType.NAVIGATION:
+            // 更新导航计时
+            allMetrics.navigation = { ...allMetrics.navigation, ...metrics };
+            updateNavigationTimingDisplay(metrics);
+            break;
+        }
+      }
+      
+      // 更新核心Web指标显示
+      function updateCoreWebVitalsDisplay(metrics) {
         const coreWebVitalsEl = document.getElementById('core-web-vitals');
         let coreWebVitalsHTML = '';
         
-        if (metrics.coreWebVitals.lcp) {
-          const lcp = metrics.coreWebVitals.lcp;
+        if (metrics.lcp) {
+          const lcp = metrics.lcp;
           coreWebVitalsHTML += `
             <div class="metric">
               <div class="name">Largest Contentful Paint (LCP)</div>
@@ -138,8 +177,8 @@
           `;
         }
         
-        if (metrics.coreWebVitals.fid) {
-          const fid = metrics.coreWebVitals.fid;
+        if (metrics.fid) {
+          const fid = metrics.fid;
           coreWebVitalsHTML += `
             <div class="metric">
               <div class="name">First Input Delay (FID)</div>
@@ -148,8 +187,8 @@
           `;
         }
         
-        if (metrics.coreWebVitals.cls) {
-          const cls = metrics.coreWebVitals.cls;
+        if (metrics.cls) {
+          const cls = metrics.cls;
           coreWebVitalsHTML += `
             <div class="metric">
               <div class="name">Cumulative Layout Shift (CLS)</div>
@@ -158,8 +197,8 @@
           `;
         }
         
-        if (metrics.coreWebVitals.inp) {
-          const inp = metrics.coreWebVitals.inp;
+        if (metrics.inp) {
+          const inp = metrics.inp;
           coreWebVitalsHTML += `
             <div class="metric">
               <div class="name">Interaction to Next Paint (INP)</div>
@@ -168,51 +207,56 @@
           `;
         }
         
-        coreWebVitalsEl.innerHTML = coreWebVitalsHTML || 'No data available yet';
-        
-        // Update Navigation Timing
+        if (coreWebVitalsHTML) {
+          coreWebVitalsEl.innerHTML = coreWebVitalsHTML;
+        }
+      }
+      
+      // 更新导航计时显示
+      function updateNavigationTimingDisplay(metrics) {
         const navigationTimingEl = document.getElementById('navigation-timing');
         let navigationTimingHTML = '';
         
-        if (metrics.navigation.ttfb) {
-          const ttfb = metrics.navigation.ttfb;
+        if (metrics.ttfb) {
           navigationTimingHTML += `
             <div class="metric">
               <div class="name">Time to First Byte (TTFB)</div>
-              <div class="value ${ttfb.rating}">${ttfb.value.toFixed(2)} ms</div>
+              <div class="value">${metrics.ttfb.toFixed(2)} ms</div>
             </div>
           `;
         }
         
-        if (metrics.navigation.domContentLoaded) {
-          const dcl = metrics.navigation.domContentLoaded;
+        if (metrics.domContentLoaded) {
           navigationTimingHTML += `
             <div class="metric">
               <div class="name">DOM Content Loaded</div>
-              <div class="value">${dcl.value.toFixed(2)} ms</div>
+              <div class="value">${metrics.domContentLoaded.toFixed(2)} ms</div>
             </div>
           `;
         }
         
-        if (metrics.navigation.loadEvent) {
-          const load = metrics.navigation.loadEvent;
+        if (metrics.loadEvent) {
           navigationTimingHTML += `
             <div class="metric">
               <div class="name">Load Event</div>
-              <div class="value">${load.value.toFixed(2)} ms</div>
+              <div class="value">${metrics.loadEvent.toFixed(2)} ms</div>
             </div>
           `;
         }
         
-        navigationTimingEl.innerHTML = navigationTimingHTML || 'No data available yet';
-        
-        // Update Long Tasks
+        if (navigationTimingHTML) {
+          navigationTimingEl.innerHTML = navigationTimingHTML;
+        }
+      }
+      
+      // 更新长任务显示
+      function updateLongTasksDisplay(tasks) {
         const longTasksEl = document.getElementById('long-tasks');
-        if (metrics.longTasks.length > 0) {
+        if (tasks.length > 0) {
           let longTasksHTML = '';
           
-          // Show only the last 5 long tasks
-          const lastTasks = metrics.longTasks.slice(-5);
+          // 只显示最后5个长任务
+          const lastTasks = tasks.slice(-5);
           
           lastTasks.forEach((task, index) => {
             longTasksHTML += `
@@ -225,17 +269,17 @@
           });
           
           longTasksEl.innerHTML = longTasksHTML;
-        } else {
-          longTasksEl.innerHTML = 'No long tasks detected yet';
         }
-        
-        // Update Resource Timing
+      }
+      
+      // 更新资源计时显示
+      function updateResourceTimingDisplay(resources) {
         const resourceTimingEl = document.getElementById('resource-timing');
-        if (metrics.resources.length > 0) {
+        if (resources.length > 0) {
           let resourcesHTML = '';
           
-          // Show only the last 5 resources
-          const lastResources = metrics.resources.slice(-5);
+          // 只显示最后5个资源
+          const lastResources = resources.slice(-5);
           
           lastResources.forEach((resource, index) => {
             const url = new URL(resource.name);
@@ -251,8 +295,6 @@
           });
           
           resourceTimingEl.innerHTML = resourcesHTML;
-        } else {
-          resourceTimingEl.innerHTML = 'No resources detected yet';
         }
       }
       
