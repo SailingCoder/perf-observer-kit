@@ -5,7 +5,7 @@
 
 A lightweight, flexible library for monitoring web performance metrics including Core Web Vitals, resource loading performance, long tasks, and navigation timing.
 
-[English](./README.md) | [中文文档](./README_CN.md)
+[English](https://github.com/SailingCoder/perf-observer-kit/blob/main/README.md) | [中文文档](https://github.com/SailingCoder/perf-observer-kit/blob/main/README_CN.md)
 
 ## 📋 Features
 

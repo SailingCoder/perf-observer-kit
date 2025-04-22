@@ -5,7 +5,7 @@
 
 一个轻量级、灵活的库，用于监控网页性能指标，包括核心网页指标（Core Web Vitals）、资源加载性能、长任务（Long Tasks）和导航计时（Navigation Timing）。
 
-[English](./README.md) | [中文文档](./README_CN.md)
+[English](https://github.com/SailingCoder/perf-observer-kit/blob/main/README.md) | [中文文档](https://github.com/SailingCoder/perf-observer-kit/blob/main/README_CN.md)
 
 ## 📋 功能特点
 
