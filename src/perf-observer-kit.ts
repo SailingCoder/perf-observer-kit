@@ -31,20 +31,43 @@ import {
 // 从package.json获取版本号 - 这个值会在构建时被rollup插件替换
 // 使用字符串形式，避免TypeScript编译错误
 const VERSION = '__VERSION__';
+enum MetricType {
+  WEB_VITALS = 'webVitals',
+  RESOURCES = 'resources',
+  LONG_TASKS = 'longTasks',
+  NAVIGATION = 'navigation',
+  BROWSER_INFO = 'browserInfo'
+}
+
+// 扩展CoreWebVitalsOptions类型以添加缺失的属性
+interface ExtendedCoreWebVitalsOptions extends CoreWebVitalsOptions {
+  maxLongTasks?: number;
+  maxResources?: number;
+}
+
+// 扩展ResourceTimingOptions类型以添加缺失的属性
+interface ExtendedResourceTimingOptions extends Required<ResourceTimingOptions> {
+  maxResources?: number;
+}
+
+// 扩展LongTasksOptions类型以添加缺失的属性
+interface ExtendedLongTasksOptions extends LongTasksOptions {
+  maxLongTasks?: number;
+}
 
 /**
  * 性能观察工具包 - 性能监控的主类
  */
 export class PerfObserverKit {
   private options: {
-    onMetrics: (metrics: PerformanceMetrics) => void;
+    onMetrics: (metrics: { type: MetricType, metrics: any }) => void;
     debug: boolean;
     logLevel: LogLevel;
     autoStart: boolean;
     samplingRate: number;
-    coreWebVitals: CoreWebVitalsOptions;
-    resourceTiming: Required<ResourceTimingOptions>;
-    longTasks: LongTasksOptions;
+    coreWebVitals: ExtendedCoreWebVitalsOptions;
+    resourceTiming: ExtendedResourceTimingOptions;
+    longTasks: ExtendedLongTasksOptions;
     navigationTiming: NavigationTimingOptions;
     browserInfo: BrowserInfoOptions;
   };
@@ -74,7 +97,9 @@ export class PerfObserverKit {
     
     // 设置默认选项
     this.options = {
-      onMetrics: options.onMetrics || (() => {}),
+      onMetrics: options.onMetrics ? 
+        (data: { type: MetricType, metrics: any }) => options.onMetrics?.(data.metrics as any) :
+        () => {},
       debug: options.debug || false,
       logLevel: this.determineLogLevel(options),
       autoStart: options.autoStart !== undefined ? options.autoStart : false,
@@ -197,7 +222,7 @@ export class PerfObserverKit {
   private normalizeResourceOptions(
     options: boolean | ResourceTimingOptions | undefined,
     legacyOptions: PerfObserverOptions
-  ): Required<ResourceTimingOptions> {
+  ): ExtendedResourceTimingOptions {
     try {
       // 默认不启用，必须显式配置
       const normalizedOptions = this.normalizeModuleOptions(options, false);
@@ -209,7 +234,8 @@ export class PerfObserverKit {
         allowedTypes: normalizedOptions.allowedTypes || 
                       legacyOptions.allowedResourceTypes || 
                       ['script', 'link', 'img', 'css', 'font'],
-        maxEntries: normalizedOptions.maxEntries || 1000
+        maxEntries: normalizedOptions.maxEntries || 1000,
+        maxResources: 100 // 默认值
       };
     } catch (error) {
       logger.error('规范化资源计时选项失败:', error);
@@ -217,7 +243,8 @@ export class PerfObserverKit {
         enabled: false, // 默认不启用
         excludedPatterns: [],
         allowedTypes: ['script', 'link', 'img', 'css', 'font'],
-        maxEntries: 1000
+        maxEntries: 1000,
+        maxResources: 100
       };
     }
   }
@@ -227,7 +254,7 @@ export class PerfObserverKit {
    */
   private normalizeCoreWebVitalsOptions(
     options: boolean | CoreWebVitalsOptions | undefined
-  ): CoreWebVitalsOptions & { enabled: boolean } {
+  ): ExtendedCoreWebVitalsOptions {
     try {
       // 首先使用通用方法获取基础选项
       const normalizedOptions = this.normalizeModuleOptions(options, false);
@@ -239,7 +266,9 @@ export class PerfObserverKit {
         lcp: normalizedOptions.lcp !== undefined ? normalizedOptions.lcp : false,
         fid: normalizedOptions.fid !== undefined ? normalizedOptions.fid : false,
         cls: normalizedOptions.cls !== undefined ? normalizedOptions.cls : false,
-        inp: normalizedOptions.inp !== undefined ? normalizedOptions.inp : false
+        inp: normalizedOptions.inp !== undefined ? normalizedOptions.inp : false,
+        maxLongTasks: 50, // 添加默认值
+        maxResources: 100 // 添加默认值
       };
     } catch (error) {
       logger.error('规范化核心Web指标选项失败:', error);
@@ -249,7 +278,9 @@ export class PerfObserverKit {
         lcp: false,
         fid: false,
         cls: false,
-        inp: false
+        inp: false,
+        maxLongTasks: 50,
+        maxResources: 100
       };
     }
   }
@@ -422,7 +453,7 @@ export class PerfObserverKit {
       this.coreWebVitalsObserver = new CoreWebVitalsObserver({
         onUpdate: (coreWebVitalsMetrics: CoreWebVitalsMetrics) => {
           this.metrics.coreWebVitals = coreWebVitalsMetrics;
-          this.notifyMetricsUpdate();
+          this.notifyMetricsUpdate(MetricType.WEB_VITALS, coreWebVitalsMetrics);
         },
         enabled: options.enabled,
         fcp: options.fcp,
@@ -454,8 +485,13 @@ export class PerfObserverKit {
       
       this.resourceTimingObserver = new ResourceTimingObserver(
         (resources: ResourceMetrics[]) => {
-          this.metrics.resources = resources;
-          this.notifyMetricsUpdate();
+          this.metrics.resources.push(...resources);
+          // 添加安全检查，确保maxResources存在且为有效值
+          const maxResources = typeof options.maxResources === 'number' && options.maxResources > 0 
+            ? options.maxResources 
+            : 100; // 使用默认值
+          this.metrics.resources = this.metrics.resources.slice(0, maxResources);
+          this.notifyMetricsUpdate(MetricType.RESOURCES, resources);
         },
         options.excludedPatterns,
         options.allowedTypes
@@ -482,8 +518,13 @@ export class PerfObserverKit {
       
       this.longTasksObserver = new LongTasksObserver({
         onUpdate: (longTasks: LongTaskMetrics[]) => {
-          this.metrics.longTasks = longTasks;
-          this.notifyMetricsUpdate();
+          this.metrics.longTasks.push(...longTasks);
+          // 添加安全检查，确保maxLongTasks存在且为有效值
+          const maxLongTasks = typeof options.maxLongTasks === 'number' && options.maxLongTasks > 0
+            ? options.maxLongTasks
+            : 50; // 使用默认值
+          this.metrics.longTasks = this.metrics.longTasks.slice(0, maxLongTasks);
+          this.notifyMetricsUpdate(MetricType.LONG_TASKS, longTasks);
         },
         enabled: options.enabled,
         threshold: options.threshold,
@@ -512,7 +553,7 @@ export class PerfObserverKit {
       this.navigationTimingObserver = new NavigationTimingObserver({
         onUpdate: (navigationMetrics: NavigationMetrics) => {
           this.metrics.navigation = navigationMetrics;
-          this.notifyMetricsUpdate();
+          this.notifyMetricsUpdate(MetricType.NAVIGATION, navigationMetrics);
         },
         enabled: options.enabled,
         includeRawTiming: options.includeRawTiming
@@ -535,7 +576,7 @@ export class PerfObserverKit {
       this.browserInfoObserver = new BrowserInfoObserver({
         onUpdate: (browserInfo: BrowserInfo) => {
           this.metrics.browserInfo = browserInfo;
-          this.notifyMetricsUpdate();
+          this.notifyMetricsUpdate(MetricType.BROWSER_INFO, browserInfo);
         },
         enabled: true, // 强制启用，无论配置如何
         trackResize: options.trackResize,
@@ -553,10 +594,13 @@ export class PerfObserverKit {
   /**
    * 通知指标更新给回调函数
    */
-  private notifyMetricsUpdate(): void {
+  private notifyMetricsUpdate(type: MetricType, metrics: any): void {
     try {
       if (this.options.onMetrics) {
-        this.options.onMetrics(this.metrics);
+        this.options.onMetrics({
+          type,
+          metrics
+        });
       }
     } catch (error) {
       logger.error('指标更新回调执行失败:', error);

@@ -88,6 +88,7 @@ export class LongTasksObserver {
         if (newTasksCount > 0) {
           logger.info(`检测到${newTasksCount}个新的长任务，总计${this.longTasks.length}个`);
           this.onUpdate(this.longTasks);
+          this.longTasks = [];
         }
       });
       

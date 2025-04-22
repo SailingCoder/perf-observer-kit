@@ -92,6 +92,7 @@ export class ResourceTimingObserver {
     if (hasNewEntries) {
       logger.info(`新增${newEntriesCount}个资源性能指标，总计${this.resources.length}个`);
       this.onUpdate(this.resources);
+      this.resources = [];
     }
   }
 
