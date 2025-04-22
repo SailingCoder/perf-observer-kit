@@ -20,14 +20,12 @@ export interface LoggerOptions {
     prefix?: string;
 }
 /**
- * 日志工具类
- * 提供统一的日志输出接口，支持日志级别控制
+ * 日志工具类 - 精简版实现，在生产环境会被优化
  */
 export declare class Logger {
     private level;
     private prefix;
     private disableInProduction;
-    private isProduction;
     /**
      * 创建日志器实例
      * @param options 日志器选项

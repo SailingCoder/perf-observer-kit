@@ -77,9 +77,10 @@ var LogLevel;
     LogLevel[LogLevel["INFO"] = 3] = "INFO";
     LogLevel[LogLevel["DEBUG"] = 4] = "DEBUG"; // 输出所有日志，包括调试信息
 })(LogLevel || (LogLevel = {}));
+// 检测是否为生产环境 - 这将由terser自动删除生产版本中不需要的代码
+const IS_DEV = typeof process === 'undefined' || !process.env || process.env.NODE_ENV !== 'production';
 /**
- * 日志工具类
- * 提供统一的日志输出接口，支持日志级别控制
+ * 日志工具类 - 精简版实现，在生产环境会被优化
  */
 class Logger {
     /**
@@ -91,10 +92,6 @@ class Logger {
         this.level = (_a = options.level) !== null && _a !== void 0 ? _a : LogLevel.INFO;
         this.prefix = (_b = options.prefix) !== null && _b !== void 0 ? _b : '[PerfObserverKit]';
         this.disableInProduction = (_c = options.disableInProduction) !== null && _c !== void 0 ? _c : true;
-        // 检测是否为生产环境
-        this.isProduction = typeof process !== 'undefined' &&
-            process.env &&
-            process.env.NODE_ENV === 'production';
     }
     /**
      * 设置日志级别
@@ -108,24 +105,21 @@ class Logger {
      * @param args 日志内容
      */
     debug(...args) {
-        if (this.shouldLog(LogLevel.DEBUG)) {
-            console.debug(this.prefix, ...args);
-        }
+        if (IS_DEV && this.shouldLog(LogLevel.DEBUG)) ;
     }
     /**
      * 输出普通信息日志
      * @param args 日志内容
      */
     info(...args) {
-        if (this.shouldLog(LogLevel.INFO)) {
-            console.info(this.prefix, ...args);
-        }
+        if (IS_DEV && this.shouldLog(LogLevel.INFO)) ;
     }
     /**
      * 输出警告日志
      * @param args 日志内容
      */
     warn(...args) {
+        // 警告总是保留，但在生产环境会受日志级别限制
         if (this.shouldLog(LogLevel.WARN)) {
             console.warn(this.prefix, ...args);
         }
@@ -135,6 +129,7 @@ class Logger {
      * @param args 日志内容
      */
     error(...args) {
+        // 错误总是保留，但在生产环境会受日志级别限制
         if (this.shouldLog(LogLevel.ERROR)) {
             console.error(this.prefix, ...args);
         }
@@ -145,11 +140,9 @@ class Logger {
      * @returns 是否应该输出
      */
     shouldLog(messageLevel) {
-        // 在生产环境中且配置了禁用，则不输出日志
-        if (this.isProduction && this.disableInProduction) {
+        if (!IS_DEV && this.disableInProduction) {
             return false;
         }
-        // 日志级别不够，不输出
         return messageLevel <= this.level;
     }
 }
@@ -2836,12 +2829,4 @@ if (typeof window !== 'undefined') {
 }
 
 export { MetricType, PerfObserverKit };
-//# sourceMappingURL=index.js.map
-PerfObserverKit = {
-        PerfObserverKit,
-        MetricType: exports.MetricType
-    };
-}
-
-exports.PerfObserverKit = PerfObserverKit;
 //# sourceMappingURL=index.js.map
