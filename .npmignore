@@ -1,0 +1,17 @@
+# 开发环境和源代码
+.git/
+node_modules/
+src/
+examples/
+test-script.js
+
+# 构建相关文件
+build.js
+rollup.config.js
+umd-wrapper.js
+tsconfig.json
+tsconfig.build.json
+
+# 其他不需要发布的文件
+.gitignore
+README_CN.md 

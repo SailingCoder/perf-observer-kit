@@ -8,6 +8,11 @@
   "unpkg": "dist/perf-observer-kit.browser.min.js",
   "jsdelivr": "dist/perf-observer-kit.browser.min.js",
   "types": "dist/index.d.ts",
+  "files": [
+    "dist/",
+    "LICENSE",
+    "README.md"
+  ],
   "scripts": {
     "start": "npx http-server -o quick-test.html",
     "build": "node build.js",
