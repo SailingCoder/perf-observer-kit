@@ -22,11 +22,6 @@ import { ResourceTimingObserver } from './metrics/resource-timing';
 import { LongTasksObserver } from './metrics/long-tasks';
 import { NavigationTimingObserver } from './metrics/navigation-timing';
 import { BrowserInfoObserver } from './metrics/browser-observer';
-import {
-  CoreWebVitalsObserverOptions,
-  LongTasksObserverOptions,
-  NavigationTimingObserverOptions
-} from './metrics/web-vitals/types';
 
 // 从package.json获取版本号 - 这个值会在构建时被rollup插件替换
 // 使用字符串形式，避免TypeScript编译错误
@@ -37,7 +32,7 @@ const VERSION = '__VERSION__';
  */
 export class PerfObserverKit {
   private options: {
-    onMetrics: ((metrics: PerformanceMetrics) => void) | null;
+    onMetrics: ((type: MetricType, metrics: CoreWebVitalsMetrics | ResourceMetrics[] | LongTaskMetrics[] | NavigationMetrics | BrowserInfo) => void) | null;
     debug: boolean;
     logLevel: LogLevel;
     autoStart: boolean;
@@ -74,7 +69,9 @@ export class PerfObserverKit {
     
     // 设置默认选项
     this.options = {
-      onMetrics: typeof options.onMetrics === 'function' ? options.onMetrics : null,
+      onMetrics: typeof options.onMetrics === 'function' 
+        ? (options.onMetrics as unknown as ((type: MetricType, metrics: CoreWebVitalsMetrics | ResourceMetrics[] | LongTaskMetrics[] | NavigationMetrics | BrowserInfo) => void))
+        : null,
       debug: options.debug || false,
       logLevel: this.determineLogLevel(options),
       autoStart: options.autoStart !== undefined ? options.autoStart : false,
@@ -242,9 +239,8 @@ export class PerfObserverKit {
         fid: normalizedOptions.fid !== undefined ? normalizedOptions.fid : false,
         cls: normalizedOptions.cls !== undefined ? normalizedOptions.cls : false,
         inp: normalizedOptions.inp !== undefined ? normalizedOptions.inp : false,
-        // 使用配置中的值或默认值
-        maxLongTasks: (typeof normalizedOptions === 'object' && normalizedOptions.maxLongTasks) || 50,
-        maxResources: (typeof normalizedOptions === 'object' && normalizedOptions.maxResources) || 100
+        maxLongTasks: normalizedOptions.maxLongTasks !== undefined ? normalizedOptions.maxLongTasks : 50,
+        maxResources: normalizedOptions.maxResources !== undefined ? normalizedOptions.maxResources : 100
       };
     } catch (error) {
       logger.error('规范化核心Web指标选项失败:', error);
@@ -461,29 +457,9 @@ export class PerfObserverKit {
       
       this.resourceTimingObserver = new ResourceTimingObserver(
         (resources: ResourceMetrics[]) => {
-          // 检查数组长度并确保它不超过最大容量
-          const maxResources = typeof options.maxResources === 'number' && options.maxResources > 0 
-            ? options.maxResources 
-            : 100; // 使用默认值
-          
-          // 计算可以添加的数量
-          const currentLength = this.metrics.resources.length;
-          const availableSpace = Math.max(0, maxResources - currentLength);
-          
-          // 如果没有可用空间，移除最旧的资源
-          if (availableSpace === 0) {
-            // 移除最旧的元素，为新的元素腾出空间
-            const itemsToRemove = Math.min(resources.length, this.metrics.resources.length);
-            if (itemsToRemove > 0) {
-              this.metrics.resources.splice(0, itemsToRemove);
-            }
-          }
-          
-          // 添加新资源（最多添加可用空间数量的资源）
-          const newResources = resources.slice(-Math.min(resources.length, availableSpace));
-          this.metrics.resources.push(...newResources);
-          
           this.notifyMetricsUpdate(MetricType.RESOURCES, resources);
+          this.metrics.resources.push(...resources);
+          this.metrics.resources = this.metrics.resources.slice(-options.maxResources);
         },
         options.excludedPatterns,
         options.allowedTypes
@@ -507,32 +483,13 @@ export class PerfObserverKit {
       }
       
       const options = this.options.longTasks;
+      const maxLongTasks = options.maxLongTasks || 50; // 提供默认值防止未定义
       
       this.longTasksObserver = new LongTasksObserver({
         onUpdate: (longTasks: LongTaskMetrics[]) => {
-          // 检查数组长度并确保它不超过最大容量
-          const maxLongTasks = typeof options.maxLongTasks === 'number' && options.maxLongTasks > 0
-            ? options.maxLongTasks
-            : 50; // 使用默认值
-          
-          // 计算可以添加的数量
-          const currentLength = this.metrics.longTasks.length;
-          const availableSpace = Math.max(0, maxLongTasks - currentLength);
-          
-          // 如果没有可用空间，移除最旧的长任务
-          if (availableSpace === 0) {
-            // 移除最旧的元素，为新的元素腾出空间
-            const itemsToRemove = Math.min(longTasks.length, this.metrics.longTasks.length);
-            if (itemsToRemove > 0) {
-              this.metrics.longTasks.splice(0, itemsToRemove);
-            }
-          }
-          
-          // 添加新长任务（最多添加可用空间数量的长任务）
-          const newLongTasks = longTasks.slice(-Math.min(longTasks.length, availableSpace));
-          this.metrics.longTasks.push(...newLongTasks);
-          
           this.notifyMetricsUpdate(MetricType.LONG_TASKS, longTasks);
+          this.metrics.longTasks.push(...longTasks);
+          this.metrics.longTasks = this.metrics.longTasks.slice(-maxLongTasks);
         },
         enabled: options.enabled,
         threshold: options.threshold,
@@ -605,35 +562,8 @@ export class PerfObserverKit {
   private notifyMetricsUpdate(type: MetricType, metrics: CoreWebVitalsMetrics | ResourceMetrics[] | LongTaskMetrics[] | NavigationMetrics | BrowserInfo): void {
     try {
       if (this.options.onMetrics) {
-        // 根据类型将指标数据集成到完整的性能指标对象中
-        let updatedMetrics: PerformanceMetrics;
-        
-        // 先复制当前指标
-        updatedMetrics = { ...this.metrics };
-        
-        // 根据指标类型更新对应的部分
-        switch (type) {
-          case MetricType.WEB_VITALS:
-            updatedMetrics.coreWebVitals = metrics as CoreWebVitalsMetrics;
-            break;
-          case MetricType.RESOURCES:
-            // 资源指标是数组，这里我们可能需要合并而不是直接替换
-            updatedMetrics.resources = metrics as ResourceMetrics[];
-            break;
-          case MetricType.LONG_TASKS:
-            // 长任务指标是数组，这里我们可能需要合并而不是直接替换
-            updatedMetrics.longTasks = metrics as LongTaskMetrics[];
-            break;
-          case MetricType.NAVIGATION:
-            updatedMetrics.navigation = metrics as NavigationMetrics;
-            break;
-          case MetricType.BROWSER_INFO:
-            updatedMetrics.browserInfo = metrics as BrowserInfo;
-            break;
-        }
-        
         // 调用回调函数
-        this.options.onMetrics(updatedMetrics);
+        this.options.onMetrics(type, metrics);
       }
     } catch (error) {
       logger.error('指标更新回调执行失败:', error);
