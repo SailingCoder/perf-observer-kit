@@ -119,10 +119,18 @@
         // Initialize PerfObserverKit with selective monitoring
         this.perfObserver = new PerfObserverKit.PerfObserverKit({
           onMetrics: (metrics) => this.handleMetricsUpdate(metrics),
-          enableCoreWebVitals: true,
-          enableResourceTiming: true,
-          enableLongTasks: true,
-          enableNavigationTiming: true
+          coreWebVitals: {
+            enabled: true
+          },
+          resourceTiming: {
+            enabled: true
+          },
+          longTasks: {
+            enabled: true
+          },
+          navigationTiming: {
+            enabled: true
+          }
         });
         
         // Track user interactions

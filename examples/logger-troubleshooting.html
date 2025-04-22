@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>使用Logger进行性能监控故障排查</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .panel {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background-color: #f8f8f8;
+        }
+
+        button {
+            padding: 8px 16px;
+            margin: 5px;
+            background: #0066cc;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        button.secondary {
+            background: #666;
+        }
+
+        button.warning {
+            background: #cc3300;
+        }
+
+        .code {
+            background-color: #f5f5f5;
+            padding: 10px;
+            border-radius: 4px;
+            font-family: monospace;
+            overflow-x: auto;
+            margin: 10px 0;
+        }
+
+        .status {
+            font-weight: bold;
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 4px;
+        }
+
+        .status.success {
+            background-color: #e6ffe6;
+            color: #006600;
+        }
+
+        .status.error {
+            background-color: #ffe6e6;
+            color: #cc0000;
+        }
+
+        .status.warning {
+            background-color: #fff9e6;
+            color: #996600;
+        }
+
+        #consoleView {
+            background-color: #222;
+            color: #eee;
+            font-family: monospace;
+            padding: 10px;
+            border-radius: 4px;
+            height: 200px;
+            overflow-y: auto;
+            margin-top: 10px;
+        }
+
+        #consoleView .debug {
+            color: #c0c0c0;
+        }
+
+        #consoleView .info {
+            color: #6699ff;
+        }
+
+        #consoleView .warn {
+            color: #ffcc00;
+        }
+
+        #consoleView .error {
+            color: #ff6666;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>使用Logger进行性能监控故障排查</h1>
+
+    <div class="panel">
+        <h2>性能监控设置</h2>
+        <div>
+            <button id="startBtn">启动性能监控</button>
+            <button id="stopBtn" class="secondary">停止性能监控</button>
+            <button id="generateIssueBtn" class="warning">生成性能问题</button>
+        </div>
+        <div style="margin-top: 10px;">
+            <label for="logLevel">日志级别:</label>
+            <select id="logLevel">
+                <option value="0">NONE</option>
+                <option value="1">ERROR</option>
+                <option value="2">WARN</option>
+                <option value="3" selected>INFO</option>
+                <option value="4">DEBUG</option>
+            </select>
+            <button id="applyLogLevelBtn">应用</button>
+            <label><input type="checkbox" id="debugMode"> 启用调试模式</label>
+        </div>
+        <div id="monitorStatus" class="status">监控状态: 未启动</div>
+    </div>
+
+    <div class="panel">
+        <h2>模拟内容区域</h2>
+        <div>
+            <button id="loadImageBtn">加载大图片</button>
+            <button id="longTaskBtn">执行长任务</button>
+            <button id="layoutShiftBtn">触发布局偏移</button>
+        </div>
+        <div id="contentArea" style="min-height: 100px; border: 1px dashed #ccc; margin-top: 10px; padding: 10px;">
+            <p>内容将显示在这里...</p>
+        </div>
+    </div>
+
+    <div class="panel">
+        <h2>日志输出</h2>
+        <p>所有日志都会输出到浏览器控制台，同时会在下面的区域显示摘要:</p>
+        <div id="consoleView"></div>
+        <button id="clearConsoleBtn" class="secondary">清除日志</button>
+    </div>
+
+    <div class="panel">
+        <h2>故障排查指南</h2>
+        <h3>常见问题与解决方案</h3>
+        <ol>
+            <li><strong>看不到性能指标:</strong> 将日志级别设置为DEBUG，查看是否有错误或警告信息</li>
+            <li><strong>LCP值异常高:</strong> 检查图片加载是否出现问题，可能需要优化</li>
+            <li><strong>出现长任务警告:</strong> 使用日志定位长任务的来源，优化相关代码</li>
+            <li><strong>库初始化失败:</strong> 查看ERROR级别日志，检查浏览器兼容性问题</li>
+        </ol>
+
+        <h3>排查步骤示例代码</h3>
+        <div class="code">
+<pre>// 1. 初始化性能监控时启用详细日志
+const perfMonitor = new PerfObserverKit.PerfObserverKit({
+  logLevel: LogLevel.DEBUG,
+  onMetrics: (metrics) => console.log('收集到指标:', metrics)
+});
+
+// 2. 启动监控并观察日志输出
+perfMonitor.start();
+
+// 3. 如果发现问题，检查特定组件的日志
+// 例如，使用自定义logger跟踪特定模块
+const moduleLogger = PerfObserverKit.createLogger({
+  prefix: '[图片加载模块]',
+  level: LogLevel.DEBUG
+});
+
+// 4. 记录关键操作
+function loadLargeImage() {
+  moduleLogger.debug('开始加载大图片');
+  
+  const img = new Image();
+  img.onload = () => {
+    moduleLogger.info('图片加载完成');
+  };
+  img.onerror = (err) => {
+    moduleLogger.error('图片加载失败', err);
+  };
+  img.src = 'https://example.com/large-image.jpg';
+  
+  document.getElementById('imageContainer').appendChild(img);
+}</pre>
+        </div>
+    </div>
+
+    <!-- 加载库 -->
+    <script src="../dist/perf-observer-kit.browser.js"></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // 检查库是否加载成功
+            if (typeof PerfObserverKit === 'undefined') {
+                document.getElementById('monitorStatus').textContent = '错误: PerfObserverKit 未加载';
+                document.getElementById('monitorStatus').className = 'status error';
+                return;
+            }
+
+            // 获取库中的内容 - 修复此处的引用方式
+            let logger, LogLevel, createLogger;
+
+            try {
+                // 检查库如何暴露其API
+                if (typeof PerfObserverKit.logger !== 'undefined') {
+                    // 如果PerfObserverKit是一个对象
+                    logger = PerfObserverKit.logger;
+                    LogLevel = PerfObserverKit.LogLevel;
+                    createLogger = PerfObserverKit.createLogger;
+                } else if (typeof PerfObserverKit === 'function') {
+                    // 如果PerfObserverKit是构造函数
+                    const tempInstance = new PerfObserverKit();
+                    logger = tempInstance.logger || window.logger;
+                    LogLevel = tempInstance.LogLevel || window.LogLevel;
+                    createLogger = tempInstance.createLogger || window.createLogger;
+                } else {
+                    // 尝试从全局作用域获取
+                    logger = window.logger;
+                    LogLevel = window.LogLevel;
+                    createLogger = window.createLogger;
+                }
+
+                // 如果仍然没有找到logger，创建一个模拟版本
+                if (!logger) {
+                    console.warn('找不到logger，将使用模拟版本');
+                    LogLevel = {
+                        NONE: 0,
+                        ERROR: 1,
+                        WARN: 2,
+                        INFO: 3,
+                        DEBUG: 4
+                    };
+
+                    logger = {
+                        level: LogLevel.INFO,
+                        debug: function (...args) { console.debug('[模拟Logger]', ...args); },
+                        info: function (...args) { console.info('[模拟Logger]', ...args); },
+                        warn: function (...args) { console.warn('[模拟Logger]', ...args); },
+                        error: function (...args) { console.error('[模拟Logger]', ...args); },
+                        setLevel: function (level) { this.level = level; }
+                    };
+
+                    createLogger = function (options) {
+                        return {
+                            level: options.level || LogLevel.INFO,
+                            prefix: options.prefix || '[自定义Logger]',
+                            debug: function (...args) { console.debug(this.prefix, ...args); },
+                            info: function (...args) { console.info(this.prefix, ...args); },
+                            warn: function (...args) { console.warn(this.prefix, ...args); },
+                            error: function (...args) { console.error(this.prefix, ...args); }
+                        };
+                    };
+                }
+            } catch (error) {
+                console.error('获取logger时出错:', error);
+                document.getElementById('monitorStatus').textContent = '错误: Logger初始化失败';
+                document.getElementById('monitorStatus').className = 'status error';
+                return;
+            }
+
+            // 模拟控制台输出
+            function appendToConsole(level, ...args) {
+                const consoleView = document.getElementById('consoleView');
+                const line = document.createElement('div');
+                line.className = level;
+
+                const timestamp = new Date().toISOString().substr(11, 8);
+                const prefix = '[PerfObserverKit]';
+
+                let message = `${timestamp} ${prefix} `;
+                args.forEach(arg => {
+                    if (typeof arg === 'object') {
+                        message += JSON.stringify(arg) + ' ';
+                    } else {
+                        message += arg + ' ';
+                    }
+                });
+
+                line.textContent = message;
+                consoleView.appendChild(line);
+                consoleView.scrollTop = consoleView.scrollHeight;
+            }
+
+            // 覆盖原始logger方法
+            const originalDebug = logger.debug;
+            const originalInfo = logger.info;
+            const originalWarn = logger.warn;
+            const originalError = logger.error;
+
+            logger.debug = function (...args) {
+                originalDebug.apply(logger, args);
+                appendToConsole('debug', ...args);
+            };
+
+            logger.info = function (...args) {
+                originalInfo.apply(logger, args);
+                appendToConsole('info', ...args);
+            };
+
+            logger.warn = function (...args) {
+                originalWarn.apply(logger, args);
+                appendToConsole('warn', ...args);
+            };
+
+            logger.error = function (...args) {
+                originalError.apply(logger, args);
+                appendToConsole('error', ...args);
+            };
+
+            // 性能监控实例
+            let perfMonitor = null;
+
+            // 初始化监控
+            function initMonitor() {
+                const logLevelValue = parseInt(document.getElementById('logLevel').value);
+                const isDebugMode = document.getElementById('debugMode').checked;
+
+                try {
+                    // 创建性能监控实例，处理可能的不同API形式
+                    if (typeof PerfObserverKit === 'function') {
+                        // 如果是构造函数
+                        perfMonitor = new PerfObserverKit({
+                            logLevel: logLevelValue,
+                            debug: isDebugMode,
+                            disableInProduction: false,
+                            onMetrics: function (metrics) {
+                                logger.info('收集到性能指标:',
+                                    metrics.name,
+                                    metrics.value.toFixed(2) + metrics.unit,
+                                    metrics.rating ? `(${metrics.rating})` : '');
+                            },
+                            coreWebVitals: {
+                                enabled: true,
+                                fcp: true,
+                                lcp: true,
+                                cls: true,
+                                inp: true
+                            },
+                            longTasks: {
+                                enabled: true,
+                                threshold: 50  // 更低的阈值，更容易触发
+                            }
+                        });
+                    } else if (typeof PerfObserverKit.PerfObserverKit === 'function') {
+                        // 如果是命名空间内的构造函数
+                        perfMonitor = new PerfObserverKit.PerfObserverKit({
+                            logLevel: logLevelValue,
+                            debug: isDebugMode,
+                            disableInProduction: false,
+                            onMetrics: function (metrics) {
+                                logger.info('收集到性能指标:',
+                                    metrics.name,
+                                    metrics.value.toFixed(2) + metrics.unit,
+                                    metrics.rating ? `(${metrics.rating})` : '');
+                            },
+                            coreWebVitals: {
+                                enabled: true,
+                                fcp: true,
+                                lcp: true,
+                                cls: true,
+                                inp: true
+                            },
+                            longTasks: {
+                                enabled: true,
+                                threshold: 50  // 更低的阈值，更容易触发
+                            }
+                        });
+                    } else {
+                        throw new Error('找不到PerfObserverKit构造函数');
+                    }
+
+                    logger.info('性能监控已初始化，日志级别:', logLevelValue);
+                    document.getElementById('monitorStatus').textContent = '监控状态: 已初始化';
+                    document.getElementById('monitorStatus').className = 'status';
+                } catch (error) {
+                    logger.error('初始化性能监控失败:', error);
+                    document.getElementById('monitorStatus').textContent = '监控状态: 初始化失败';
+                    document.getElementById('monitorStatus').className = 'status error';
+                }
+            }
+
+            // 页面加载时初始化
+            initMonitor();
+
+            // 按钮事件监听器
+            document.getElementById('startBtn').addEventListener('click', function () {
+                if (!perfMonitor) {
+                    initMonitor();
+                }
+
+                try {
+                    perfMonitor.start();
+                    document.getElementById('monitorStatus').textContent = '监控状态: 运行中';
+                    document.getElementById('monitorStatus').className = 'status success';
+                    logger.info('性能监控已启动');
+                } catch (error) {
+                    document.getElementById('monitorStatus').textContent = '监控状态: 启动失败';
+                    document.getElementById('monitorStatus').className = 'status error';
+                    logger.error('启动性能监控时出错:', error);
+                }
+            });
+
+            document.getElementById('stopBtn').addEventListener('click', function () {
+                if (perfMonitor) {
+                    perfMonitor.stop();
+                    document.getElementById('monitorStatus').textContent = '监控状态: 已停止';
+                    document.getElementById('monitorStatus').className = 'status';
+                    logger.info('性能监控已停止');
+                }
+            });
+
+            document.getElementById('applyLogLevelBtn').addEventListener('click', function () {
+                const logLevelValue = parseInt(document.getElementById('logLevel').value);
+                if (perfMonitor) {
+                    perfMonitor.setLogLevel(logLevelValue);
+                    logger.info('日志级别已更新为:', logLevelValue);
+                } else {
+                    logger.warn('监控未启动，无法应用日志级别');
+                }
+            });
+
+            document.getElementById('debugMode').addEventListener('change', function (e) {
+                if (perfMonitor) {
+                    perfMonitor.setDebugMode(e.target.checked);
+
+                    // 更新选择器以匹配当前日志级别
+                    if (e.target.checked) {
+                        document.getElementById('logLevel').value = '4'; // DEBUG
+                    }
+                }
+            });
+
+            // 内容操作
+            document.getElementById('loadImageBtn').addEventListener('click', function () {
+                const contentArea = document.getElementById('contentArea');
+
+                // 创建模块logger
+                const imgLogger = createLogger({
+                    prefix: '[图片加载模块]',
+                    level: LogLevel.DEBUG
+                });
+
+                imgLogger.debug('开始加载图片');
+
+                // 创建图片元素
+                const img = document.createElement('img');
+                img.style.maxWidth = '100%';
+                img.style.height = 'auto';
+                img.style.display = 'block';
+                img.style.margin = '10px 0';
+
+                // 监听加载事件
+                img.onload = function () {
+                    imgLogger.info('图片加载完成', `尺寸: ${img.width}x${img.height}`);
+                };
+
+                img.onerror = function (err) {
+                    imgLogger.error('图片加载失败', err);
+                };
+
+                // 设置图片源
+                img.src = 'https://picsum.photos/800/400?random=' + Math.random();
+
+                // 添加到页面
+                contentArea.innerHTML = '';
+                contentArea.appendChild(img);
+            });
+
+            document.getElementById('longTaskBtn').addEventListener('click', function () {
+                logger.debug('开始执行长任务');
+
+                const taskLogger = createLogger({
+                    prefix: '[长任务模块]',
+                    level: LogLevel.DEBUG
+                });
+
+                taskLogger.info('开始执行耗时操作');
+
+                // 执行长任务
+                const start = performance.now();
+
+                // 执行耗时操作
+                const result = fibonacci(38); // 计算斐波那契数列
+
+                const duration = performance.now() - start;
+
+                taskLogger.info(`长任务执行完成，耗时: ${duration.toFixed(2)}ms`, `结果: ${result}`);
+
+                // 显示结果
+                document.getElementById('contentArea').innerHTML = `
+          <p>长任务执行完成：</p>
+          <p>操作: 计算斐波那契数列(38)</p>
+          <p>结果: ${result}</p>
+          <p>耗时: ${duration.toFixed(2)}ms</p>
+        `;
+            });
+
+            // 计算斐波那契数列（故意低效实现，用于生成长任务）
+            function fibonacci(n) {
+                if (n <= 1) return n;
+                return fibonacci(n - 1) + fibonacci(n - 2);
+            }
+
+            document.getElementById('layoutShiftBtn').addEventListener('click', function () {
+                const layoutLogger = createLogger({
+                    prefix: '[布局模块]',
+                    level: LogLevel.DEBUG
+                });
+
+                layoutLogger.debug('准备触发布局偏移');
+
+                // 获取内容区域
+                const contentArea = document.getElementById('contentArea');
+                contentArea.innerHTML = '';
+
+                // 先添加一些内容
+                for (let i = 0; i < 3; i++) {
+                    const p = document.createElement('p');
+                    p.textContent = `这是段落 ${i + 1}, 用于演示布局偏移。`;
+                    contentArea.appendChild(p);
+                }
+
+                // 延迟后添加会导致布局偏移的元素
+                layoutLogger.debug('延迟添加元素，将导致布局偏移');
+
+                setTimeout(() => {
+                    // 创建大的顶部元素
+                    const header = document.createElement('div');
+                    header.style.height = '80px';
+                    header.style.background = '#f0f0f0';
+                    header.style.padding = '20px';
+                    header.style.marginBottom = '15px';
+                    header.textContent = '这个突然插入的元素会导致布局偏移';
+
+                    // 插入到内容顶部
+                    contentArea.insertBefore(header, contentArea.firstChild);
+
+                    layoutLogger.info('布局偏移已触发');
+                }, 500);
+            });
+
+            document.getElementById('generateIssueBtn').addEventListener('click', function () {
+                logger.warn('生成性能问题...');
+
+                // 添加大量DOM元素
+                const contentArea = document.getElementById('contentArea');
+                contentArea.innerHTML = '';
+
+                function addManyElements() {
+                    for (let i = 0; i < 200; i++) {
+                        const div = document.createElement('div');
+                        div.style.height = '10px';
+                        div.style.margin = '2px';
+                        div.style.background = `rgb(${Math.random() * 255}, ${Math.random() * 255}, ${Math.random() * 255})`;
+                        contentArea.appendChild(div);
+
+                        // 强制布局计算
+                        const computed = window.getComputedStyle(div).height;
+                        div.textContent = computed;
+                    }
+                }
+
+                // 产生多个长任务
+                for (let i = 0; i < 3; i++) {
+                    setTimeout(() => {
+                        logger.warn(`执行批次 ${i + 1}/3 的DOM操作`);
+                        addManyElements();
+                    }, i * 100);
+                }
+            });
+
+            document.getElementById('clearConsoleBtn').addEventListener('click', function () {
+                document.getElementById('consoleView').innerHTML = '';
+            });
+
+            // 初始日志
+            logger.info('页面已加载，性能监控示例已就绪');
+            logger.info('请点击"启动性能监控"按钮开始');
+            logger.debug('调试信息示例');
+            logger.warn('警告信息示例');
+        });
+    </script>
+</body>
+
+</html>

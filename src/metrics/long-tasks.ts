@@ -1,5 +1,6 @@
 import { LongTaskMetrics } from '../types';
 import { LongTasksObserverOptions } from './web-vitals/types';
+import { logger } from '../utils/logger';
 
 // Define TaskAttributionTiming interface if not available
 interface TaskAttributionTiming {
@@ -35,15 +36,24 @@ export class LongTasksObserver {
       maxEntries: options.maxEntries || 100,
       ...options
     };
+    
+    logger.debug('长任务观察者已创建，配置:', {
+      enabled: this.options.enabled,
+      threshold: this.options.threshold,
+      maxEntries: this.options.maxEntries
+    });
   }
   
   /**
    * 开始监控长任务
    */
   start(): void {
+    logger.info('开始长任务监控');
+    
     try {
       this.observer = new PerformanceObserver((entryList) => {
         const entries = entryList.getEntries();
+        let newTasksCount = 0;
         
         for (const entry of entries) {
           // 检查任务持续时间是否超过阈值
@@ -60,20 +70,31 @@ export class LongTasksObserver {
           };
           
           this.longTasks.push(longTask);
+          newTasksCount++;
+          
+          logger.debug('检测到长任务:', {
+            duration: `${entry.duration.toFixed(2)}ms`,
+            source: attribution || 'unknown'
+          });
           
           // 如果超过最大条目数，移除最旧的
           const maxEntries = this.options.maxEntries || 100;
           if (this.longTasks.length > maxEntries) {
             this.longTasks.shift();
+            logger.debug('超出最大长任务记录数，移除最旧的条目');
           }
         }
         
-        this.onUpdate(this.longTasks);
+        if (newTasksCount > 0) {
+          logger.info(`检测到${newTasksCount}个新的长任务，总计${this.longTasks.length}个`);
+          this.onUpdate(this.longTasks);
+        }
       });
       
       this.observer.observe({ type: 'longtask', buffered: true });
+      logger.debug('长任务观察者已启动，阈值为', this.options.threshold, 'ms');
     } catch (error) {
-      console.error('Long tasks monitoring not supported', error);
+      logger.error('长任务监控不受支持', error);
     }
   }
   
@@ -81,9 +102,12 @@ export class LongTasksObserver {
    * 停止监控长任务
    */
   stop(): void {
+    logger.info('停止长任务监控');
+    
     if (this.observer) {
       this.observer.disconnect();
       this.observer = null;
+      logger.debug('长任务观察者已断开连接');
     }
   }
   
@@ -98,7 +122,9 @@ export class LongTasksObserver {
    * 清除收集到的长任务数据
    */
   clearLongTasks(): void {
+    const count = this.longTasks.length;
     this.longTasks = [];
+    logger.info(`清除了${count}个长任务记录`);
   }
   
   /**

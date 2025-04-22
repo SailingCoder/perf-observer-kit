@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Logger使用示例</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    .controls {
+      margin: 20px 0;
+      padding: 15px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      background-color: #f8f8f8;
+    }
+    button {
+      padding: 8px 16px;
+      margin: 5px;
+      background: #0066cc;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    select {
+      padding: 8px;
+      border-radius: 4px;
+      border: 1px solid #ccc;
+      margin: 10px 0;
+    }
+    .instructions {
+      margin-top: 30px;
+      padding: 15px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      background-color: #fff;
+    }
+    .code {
+      background-color: #f5f5f5;
+      padding: 10px;
+      border-radius: 4px;
+      font-family: monospace;
+      overflow-x: auto;
+      margin: 10px 0;
+    }
+  </style>
+</head>
+<body>
+  <h1>Logger使用示例</h1>
+  
+  <div class="controls">
+    <h2>日志控制</h2>
+    <div>
+      <button id="debugBtn">输出Debug日志</button>
+      <button id="infoBtn">输出Info日志</button>
+      <button id="warnBtn">输出警告日志</button>
+      <button id="errorBtn">输出错误日志</button>
+    </div>
+    <div>
+      <label for="logLevel">设置日志级别:</label>
+      <select id="logLevel">
+        <option value="0">NONE</option>
+        <option value="1">ERROR</option>
+        <option value="2">WARN</option>
+        <option value="3" selected>INFO</option>
+        <option value="4">DEBUG</option>
+      </select>
+    </div>
+    <div>
+      <button id="customLoggerBtn">使用自定义Logger</button>
+    </div>
+  </div>
+  
+  <div class="instructions">
+    <h2>使用说明</h2>
+    <ol>
+      <li>打开浏览器控制台 (按F12或右键点击页面 -> 检查)</li>
+      <li>点击按钮查看不同级别的日志输出</li>
+      <li>通过下拉菜单更改日志级别，然后再次点击按钮检查是否生效</li>
+    </ol>
+    <p>请注意：日志级别为X时，只会显示级别小于等于X的日志。例如，日志级别为INFO(3)时，将显示INFO、WARN和ERROR日志，但不会显示DEBUG日志。</p>
+  </div>
+  
+  <div class="instructions">
+    <h2>代码示例</h2>
+    
+    <h3>1. 基本用法</h3>
+    <div class="code">
+      <pre>
+// 导入logger
+import { logger } from '../src/utils/logger';
+
+// 使用默认logger记录不同级别的日志
+logger.debug('这是调试信息');
+logger.info('这是普通信息');
+logger.warn('这是警告信息');
+logger.error('这是错误信息');
+      </pre>
+    </div>
+    
+    <h3>2. 设置日志级别</h3>
+    <div class="code">
+      <pre>
+import { logger, LogLevel } from '../src/utils/logger';
+
+// 设置日志级别为DEBUG，显示所有日志
+logger.setLevel(LogLevel.DEBUG);
+
+// 设置为ERROR，只显示错误
+logger.setLevel(LogLevel.ERROR);
+      </pre>
+    </div>
+    
+    <h3>3. 创建自定义logger</h3>
+    <div class="code">
+      <pre>
+import { createLogger, LogLevel } from '../src/utils/logger';
+
+// 创建自定义logger
+const customLogger = createLogger({
+  prefix: '[自定义模块]',         // 自定义前缀
+  level: LogLevel.DEBUG,         // 自定义日志级别
+  disableInProduction: false     // 在生产环境中也显示日志
+});
+
+// 使用自定义logger
+customLogger.debug('自定义logger的调试信息');
+      </pre>
+    </div>
+  </div>
+
+  <!-- 加载我们的库 -->
+  <script src="../dist/perf-observer-kit.browser.js"></script>
+  
+  <!-- Logger实现脚本 -->
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      console.log('Logger示例页面已加载');
+      
+      // 检查库是否加载成功
+      if (typeof PerfObserverKit === 'undefined') {
+        console.error('PerfObserverKit 未成功加载！');
+        document.body.innerHTML = '<h1 style="color:red">错误：PerfObserverKit 未成功加载</h1>' + document.body.innerHTML;
+        return;
+      }
+      
+      // 获取logger和LogLevel
+      const { logger, LogLevel, createLogger } = PerfObserverKit;
+      
+      // 初始化时输出一条信息
+      logger.info('Logger示例页面已加载，使用全局logger');
+      logger.debug('这条调试信息在默认日志级别下不会显示');
+      
+      // 为按钮添加事件监听器
+      document.getElementById('debugBtn').addEventListener('click', () => {
+        logger.debug('调试日志内容', { time: new Date().toISOString() });
+      });
+      
+      document.getElementById('infoBtn').addEventListener('click', () => {
+        logger.info('信息日志内容', { time: new Date().toISOString() });
+      });
+      
+      document.getElementById('warnBtn').addEventListener('click', () => {
+        logger.warn('警告日志内容', { time: new Date().toISOString() });
+      });
+      
+      document.getElementById('errorBtn').addEventListener('click', () => {
+        logger.error('错误日志内容', { time: new Date().toISOString() });
+      });
+      
+      // 监听日志级别变化
+      document.getElementById('logLevel').addEventListener('change', (e) => {
+        const level = parseInt(e.target.value);
+        logger.setLevel(level);
+        
+        // 输出各种级别的日志，验证设置是否生效
+        logger.debug('DEBUG级别的日志');
+        logger.info('INFO级别的日志');
+        logger.warn('WARN级别的日志');
+        logger.error('ERROR级别的日志');
+      });
+      
+      // 创建一个自定义logger示例
+      const customLogger = createLogger({
+        prefix: '[自定义模块]',
+        level: LogLevel.DEBUG
+      });
+      
+      // 使用自定义logger的按钮
+      document.getElementById('customLoggerBtn').addEventListener('click', () => {
+        console.log('使用自定义logger输出不同级别的日志:');
+        customLogger.debug('自定义logger的调试信息');
+        customLogger.info('自定义logger的信息');
+        customLogger.warn('自定义logger的警告');
+        customLogger.error('自定义logger的错误');
+      });
+    });
+  </script>
+</body>
+</html> 

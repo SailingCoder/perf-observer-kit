@@ -3,6 +3,7 @@ import { calculateTime } from '../utils/time';
 import { NetworkMetricsCollector } from '../utils/network-metrics';
 import { BrowserInfoCollector } from '../utils/browser-info';
 import { NavigationTimingObserverOptions } from './web-vitals/types';
+import { logger } from '../utils/logger';
 
 /**
  * 导航计时观察者
@@ -25,12 +26,19 @@ export class NavigationTimingObserver {
       includeRawTiming: options.includeRawTiming !== undefined ? options.includeRawTiming : true,
       ...options
     };
+    
+    logger.debug('导航计时观察者已创建，配置:', {
+      enabled: this.options.enabled,
+      includeRawTiming: this.options.includeRawTiming
+    });
   }
   
   /**
    * 开始监控导航计时性能
    */
   start(): void {
+    logger.info('开始监控导航计时性能');
+    
     // First try to get the current navigation timing metrics
     this.collectInitialNavigationTiming();
     
@@ -42,13 +50,15 @@ export class NavigationTimingObserver {
         if (entries.length > 0) {
           // Use the most recent navigation entry
           const navigationEntry = entries[entries.length - 1] as PerformanceNavigationTiming;
+          logger.debug('收到新的导航计时条目:', navigationEntry.name);
           this.processNavigationEntry(navigationEntry);
         }
       });
       
       this.observer.observe({ type: 'navigation', buffered: true });
+      logger.debug('导航计时观察者已启动');
     } catch (error) {
-      console.error('Navigation timing observation not supported', error);
+      logger.error('导航计时观察不受支持:', error);
     }
   }
   
@@ -56,9 +66,12 @@ export class NavigationTimingObserver {
    * 停止监控导航计时性能
    */
   stop(): void {
+    logger.info('停止导航计时性能监控');
+    
     if (this.observer) {
       this.observer.disconnect();
       this.observer = null;
+      logger.debug('导航计时观察者已断开连接');
     }
   }
   
@@ -78,10 +91,13 @@ export class NavigationTimingObserver {
       
       if (navigationEntries.length > 0) {
         const navigationEntry = navigationEntries[0] as PerformanceNavigationTiming;
+        logger.debug('收集初始导航计时数据:', navigationEntry.name);
         this.processNavigationEntry(navigationEntry);
+      } else {
+        logger.warn('未找到导航计时条目');
       }
     } catch (error) {
-      console.error('Error collecting initial navigation timing', error);
+      logger.error('收集初始导航计时数据时出错:', error);
     }
   }
   
@@ -143,6 +159,14 @@ export class NavigationTimingObserver {
     const domContentLoadedTime = calculateTime(entry.domContentLoadedEventEnd, entry.startTime) || 0;
     const loadTime = calculateTime(entry.loadEventEnd, entry.startTime) || 0;
     
+    // 记录关键性能指标
+    logger.debug('计算导航计时指标:', {
+      url: entry.name,
+      ttfb: ttfbTime.toFixed(2) + 'ms',
+      domContentLoaded: domContentLoadedTime.toFixed(2) + 'ms',
+      loadTime: loadTime.toFixed(2) + 'ms'
+    });
+    
     // 获取网络信息
     const networkInfo = NetworkMetricsCollector.getNetworkInformation();
     
@@ -190,7 +214,15 @@ export class NavigationTimingObserver {
         type: entry.type,
         redirectCount: entry.redirectCount,
       };
+      logger.debug('包含原始导航计时数据');
     }
+    
+    logger.info('导航计时指标已更新:', {
+      url: pageUrl.split('?')[0], // 移除查询参数以避免日志过长
+      ttfb: ttfbTime.toFixed(2) + 'ms',
+      domContentLoaded: domContentLoadedTime.toFixed(2) + 'ms',
+      load: loadTime.toFixed(2) + 'ms'
+    });
     
     this.onUpdate(this.metrics);
   }
