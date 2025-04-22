@@ -1,7 +1,7 @@
 {
   "name": "perf-observer-kit",
-  "version": "0.1.0",
-  "description": "A lightweight and flexible library for monitoring and analyzing web performance metrics including Core Web Vitals, user interactions, and custom performance events",
+  "version": "0.0.1",
+  "description": "A lightweight, flexible library for monitoring web performance metrics including Core Web Vitals, resource loading performance, long tasks, and navigation timing.",
   "main": "dist/index.js",
   "module": "dist/index.js",
   "browser": "dist/perf-observer-kit.browser.js",
@@ -25,7 +25,7 @@
     "PerformanceObserver",
     "core-web-vitals"
   ],
-  "author": "",
+  "author": "sailing",
   "license": "MIT",
   "devDependencies": {
     "@rollup/plugin-commonjs": "^24.1.0",

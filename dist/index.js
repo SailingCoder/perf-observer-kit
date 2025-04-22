@@ -2346,7 +2346,7 @@ class BrowserInfoObserver {
 
 // 从package.json获取版本号 - 这个值会在构建时被rollup插件替换
 // 使用字符串形式，避免TypeScript编译错误
-const VERSION = '0.1.0';
+const VERSION = '0.0.1';
 /**
  * 性能观察工具包 - 性能监控的主类
  */
