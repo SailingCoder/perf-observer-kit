@@ -2,8 +2,17 @@ import typescript from '@rollup/plugin-typescript';
 import resolve from '@rollup/plugin-node-resolve';
 import commonjs from '@rollup/plugin-commonjs';
 import pkg from './package.json';
+import { defineConfig } from 'rollup';
 
-export default [
+// 创建一个替换__VERSION__的插件
+const versionReplacer = {
+  name: 'version-replacer',
+  transform(code) {
+    return code.replace(/__VERSION__/g, pkg.version);
+  }
+};
+
+export default defineConfig([
   // ESM 和 CJS 版本
   {
     input: 'src/index.ts',
@@ -23,6 +32,7 @@ export default [
       typescript({
         tsconfig: './tsconfig.json'
       }),
+      versionReplacer,
       resolve(),
       commonjs()
     ]
@@ -41,8 +51,9 @@ export default [
       typescript({
         tsconfig: './tsconfig.json'
       }),
+      versionReplacer,
       resolve(),
       commonjs()
     ]
   }
-]; 
+]); 

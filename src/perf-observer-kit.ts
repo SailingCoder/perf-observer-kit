@@ -28,6 +28,10 @@ import {
   NavigationTimingObserverOptions
 } from './metrics/web-vitals/types';
 
+// 从package.json获取版本号 - 这个值会在构建时被rollup插件替换
+// 使用字符串形式，避免TypeScript编译错误
+const VERSION = '__VERSION__';
+
 /**
  * 性能观察工具包 - 性能监控的主类
  */
@@ -65,6 +69,9 @@ export class PerfObserverKit {
    * 创建性能观察工具包实例
    */
   constructor(options: PerfObserverOptions = {}) {
+    // 验证传入的选项
+    this.validateOptions(options);
+    
     // 设置默认选项
     this.options = {
       onMetrics: options.onMetrics || (() => {}),
@@ -96,17 +103,44 @@ export class PerfObserverKit {
     logger.debug('PerfObserverKit初始化完成，配置:', this.options);
     
     // 检查浏览器支持
+    this.checkBrowserCompatibility();
+    
+    // 如果启用了自动开始，则自动启动监控
+    if (this.options.autoStart) {
+      this.start();
+    }
+  }
+  
+  /**
+   * 验证传入的选项
+   */
+  private validateOptions(options: PerfObserverOptions): void {
+    // 验证采样率
+    if (options.samplingRate !== undefined && 
+        (typeof options.samplingRate !== 'number' || 
+         options.samplingRate < 0 || 
+         options.samplingRate > 1)) {
+      logger.warn('无效的采样率设置，应为0到1之间的数字，将使用默认值0');
+      options.samplingRate = 0;
+    }
+    
+    // 验证onMetrics回调
+    if (options.onMetrics !== undefined && typeof options.onMetrics !== 'function') {
+      logger.warn('onMetrics必须是一个函数，将使用默认空函数');
+      options.onMetrics = () => {};
+    }
+  }
+  
+  /**
+   * 检查浏览器兼容性
+   */
+  private checkBrowserCompatibility(): void {
     if (!browserSupport.hasPerformanceAPI()) {
       logger.warn('当前浏览器不支持Performance API');
     }
     
     if (!browserSupport.hasPerformanceObserver()) {
       logger.warn('当前浏览器不支持PerformanceObserver');
-    }
-    
-    // 如果启用了自动开始，则自动启动监控
-    if (this.options.autoStart) {
-      this.start();
     }
   }
   
@@ -239,31 +273,27 @@ export class PerfObserverKit {
       return;
     }
     
-    // 核心Web指标 - 需要显式配置启用
-    if (this.options.coreWebVitals.enabled) {
-      this.startCoreWebVitalsMonitoring();
-    }
-    
-    // 资源计时 - 需要显式配置启用
-    if (this.options.resourceTiming.enabled) {
-      this.startResourceTimingMonitoring();
-    }
-    
-    // 长任务监控 - 需要显式配置启用
-    if (this.options.longTasks.enabled) {
-      this.startLongTasksMonitoring();
-    }
-    
-    // 导航计时 - 需要显式配置启用
-    if (this.options.navigationTiming.enabled) {
-      this.startNavigationTimingMonitoring();
-    }
+    // 使用通用方法启动各个观察器
+    this.startObserver('coreWebVitals', this.startCoreWebVitalsMonitoring.bind(this));
+    this.startObserver('resourceTiming', this.startResourceTimingMonitoring.bind(this));
+    this.startObserver('longTasks', this.startLongTasksMonitoring.bind(this));
+    this.startObserver('navigationTiming', this.startNavigationTimingMonitoring.bind(this));
     
     // 浏览器信息 - 默认启用，无论配置如何都启动
     this.startBrowserInfoMonitoring();
     
     this.isRunning = true;
     logger.debug('所有启用的性能监控模块已启动');
+  }
+  
+  /**
+   * 通用启动观察器方法
+   */
+  private startObserver(name: string, startMethod: () => void): void {
+    const option = (this.options as any)[name];
+    if (option && option.enabled) {
+      startMethod();
+    }
   }
   
   /**
@@ -277,33 +307,35 @@ export class PerfObserverKit {
     
     logger.info('停止监控性能指标');
     
-    if (this.coreWebVitalsObserver) {
-      this.coreWebVitalsObserver.stop();
-      this.coreWebVitalsObserver = null;
-    }
+    // 停止并清理所有观察器
+    this.cleanupObserver(this.coreWebVitalsObserver);
+    this.cleanupObserver(this.resourceTimingObserver);
+    this.cleanupObserver(this.longTasksObserver);
+    this.cleanupObserver(this.navigationTimingObserver);
+    this.cleanupObserver(this.browserInfoObserver);
     
-    if (this.resourceTimingObserver) {
-      this.resourceTimingObserver.stop();
-      this.resourceTimingObserver = null;
-    }
-    
-    if (this.longTasksObserver) {
-      this.longTasksObserver.stop();
-      this.longTasksObserver = null;
-    }
-    
-    if (this.navigationTimingObserver) {
-      this.navigationTimingObserver.stop();
-      this.navigationTimingObserver = null;
-    }
-    
-    if (this.browserInfoObserver) {
-      this.browserInfoObserver.stop();
-      this.browserInfoObserver = null;
-    }
+    // 重置所有观察器引用
+    this.coreWebVitalsObserver = null;
+    this.resourceTimingObserver = null;
+    this.longTasksObserver = null;
+    this.navigationTimingObserver = null;
+    this.browserInfoObserver = null;
     
     this.isRunning = false;
     logger.debug('所有性能监控模块已停止');
+  }
+  
+  /**
+   * 清理观察器
+   */
+  private cleanupObserver<T extends { stop: () => void }>(observer: T | null): void {
+    if (observer) {
+      try {
+        observer.stop();
+      } catch (error) {
+        logger.error('停止观察器失败:', error);
+      }
+    }
   }
   
   /**
@@ -535,7 +567,7 @@ export class PerfObserverKit {
    * 获取库版本信息
    */
   getVersion(): string {
-    return '0.1.0'; // 确保此版本号与package.json中的版本一致
+    return VERSION;
   }
   
   /**
