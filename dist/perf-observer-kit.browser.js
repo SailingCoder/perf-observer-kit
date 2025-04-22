@@ -2352,7 +2352,7 @@
 
     // 从package.json获取版本号 - 这个值会在构建时被rollup插件替换
     // 使用字符串形式，避免TypeScript编译错误
-    const VERSION = '0.0.1';
+    const VERSION = '0.0.2';
     /**
      * 性能观察工具包 - 性能监控的主类
      */
@@ -2388,7 +2388,7 @@
                 // 核心Web指标配置 - 默认不启用，必须显式配置
                 coreWebVitals: this.normalizeCoreWebVitalsOptions(options.coreWebVitals),
                 // 资源计时配置 - 默认不启用，必须显式配置
-                resourceTiming: this.normalizeResourceOptions(options.resourceTiming, options),
+                resourceTiming: this.normalizeResourceOptions(options.resourceTiming),
                 // 长任务监控配置 - 默认不启用，必须显式配置
                 longTasks: this.normalizeModuleOptions(options.longTasks, false),
                 // 导航计时配置 - 默认不启用，必须显式配置
@@ -2457,7 +2457,7 @@
          */
         normalizeModuleOptions(options, defaultEnabled) {
             try {
-                // 处理布尔值情况 (向后兼容)
+                // 处理布尔值情况
                 if (typeof options === 'boolean') {
                     return { enabled: options };
                 }
@@ -2479,16 +2479,14 @@
         /**
          * 规范化资源计时选项
          */
-        normalizeResourceOptions(options, legacyOptions) {
+        normalizeResourceOptions(options) {
             try {
                 // 默认不启用，必须显式配置
                 const normalizedOptions = this.normalizeModuleOptions(options, false);
                 return {
                     enabled: normalizedOptions.enabled,
-                    excludedPatterns: normalizedOptions.excludedPatterns ||
-                        legacyOptions.excludedResourcePatterns || [],
+                    excludedPatterns: normalizedOptions.excludedPatterns || [],
                     allowedTypes: normalizedOptions.allowedTypes ||
-                        legacyOptions.allowedResourceTypes ||
                         ['script', 'link', 'img', 'css', 'font'],
                     maxEntries: normalizedOptions.maxEntries || 1000,
                     maxResources: normalizedOptions.maxResources || 100 // 从配置中读取值

@@ -70,7 +70,7 @@ export class PerfObserverKit {
     // 设置默认选项
     this.options = {
       onMetrics: typeof options.onMetrics === 'function' 
-        ? (options.onMetrics as unknown as ((type: MetricType, metrics: CoreWebVitalsMetrics | ResourceMetrics[] | LongTaskMetrics[] | NavigationMetrics | BrowserInfo) => void))
+        ? options.onMetrics
         : null,
       debug: options.debug || false,
       logLevel: this.determineLogLevel(options),
@@ -81,7 +81,7 @@ export class PerfObserverKit {
       coreWebVitals: this.normalizeCoreWebVitalsOptions(options.coreWebVitals),
       
       // 资源计时配置 - 默认不启用，必须显式配置
-      resourceTiming: this.normalizeResourceOptions(options.resourceTiming, options),
+      resourceTiming: this.normalizeResourceOptions(options.resourceTiming),
       
       // 长任务监控配置 - 默认不启用，必须显式配置
       longTasks: this.normalizeModuleOptions(options.longTasks, false),
@@ -167,7 +167,7 @@ export class PerfObserverKit {
     defaultEnabled: boolean
   ): T & { enabled: boolean } {
     try {
-      // 处理布尔值情况 (向后兼容)
+      // 处理布尔值情况
       if (typeof options === 'boolean') {
         return { enabled: options } as T & { enabled: boolean };
       }
@@ -192,8 +192,7 @@ export class PerfObserverKit {
    * 规范化资源计时选项
    */
   private normalizeResourceOptions(
-    options: boolean | ResourceTimingOptions | undefined,
-    legacyOptions: PerfObserverOptions
+    options: boolean | ResourceTimingOptions | undefined
   ): Required<ResourceTimingOptions> {
     try {
       // 默认不启用，必须显式配置
@@ -201,10 +200,8 @@ export class PerfObserverKit {
       
       return {
         enabled: normalizedOptions.enabled,
-        excludedPatterns: normalizedOptions.excludedPatterns || 
-                          legacyOptions.excludedResourcePatterns || [],
+        excludedPatterns: normalizedOptions.excludedPatterns || [],
         allowedTypes: normalizedOptions.allowedTypes || 
-                      legacyOptions.allowedResourceTypes || 
                       ['script', 'link', 'img', 'css', 'font'],
         maxEntries: normalizedOptions.maxEntries || 1000,
         maxResources: normalizedOptions.maxResources || 100 // 从配置中读取值

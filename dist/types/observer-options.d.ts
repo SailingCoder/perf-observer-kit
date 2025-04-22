@@ -1,5 +1,6 @@
 import { LogLevel } from '../utils/logger';
-import { PerformanceMetrics } from './metric-types';
+import { MetricType, CoreWebVitalsMetrics, ResourceMetrics, LongTaskMetrics, NavigationMetrics } from './metric-types';
+import { BrowserInfo } from './browser-info-types';
 /**
  * 全局选项
  */
@@ -90,8 +91,12 @@ export interface BrowserInfoOptions {
  * 性能观察器选项
  */
 export interface PerfObserverOptions extends GlobalOptions {
-    /** 指标更新回调函数 */
-    onMetrics?: (metrics: PerformanceMetrics) => void;
+    /**
+     * 指标更新回调函数
+     * @param type 指标类型
+     * @param metrics 具体指标数据
+     */
+    onMetrics?: (type: MetricType, metrics: CoreWebVitalsMetrics | ResourceMetrics[] | LongTaskMetrics[] | NavigationMetrics | BrowserInfo) => void;
     /** 自定义日志前缀 */
     logPrefix?: string;
     /** 是否在生产环境禁用日志 */
@@ -106,16 +111,4 @@ export interface PerfObserverOptions extends GlobalOptions {
     navigationTiming?: boolean | NavigationTimingOptions;
     /** 浏览器信息配置 */
     browserInfo?: boolean | BrowserInfoOptions;
-    /** @deprecated 使用 coreWebVitals 替代 */
-    enableCoreWebVitals?: boolean;
-    /** @deprecated 使用 resourceTiming 替代 */
-    enableResourceTiming?: boolean;
-    /** @deprecated 使用 longTasks 替代 */
-    enableLongTasks?: boolean;
-    /** @deprecated 使用 navigationTiming 替代 */
-    enableNavigationTiming?: boolean;
-    /** @deprecated 使用 resourceTiming.excludedPatterns 替代 */
-    excludedResourcePatterns?: RegExp[];
-    /** @deprecated 使用 resourceTiming.allowedTypes 替代 */
-    allowedResourceTypes?: string[];
 }
