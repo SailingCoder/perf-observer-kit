@@ -101,23 +101,16 @@
         logLevel: 4,
         coreWebVitals: {
           enabled: true,
-          includeFCP: true,
-          includeLCP: true,
-          // includeFID: true,
-          // includeCLS: true,
+          fcp: true,
+          lcp: true,
+          cls: true,
+          inp: true,
+          ttfb: true,
         },
-        resourceTiming: {
-          enabled: true,
-        },
-        longTasks: {
-          enabled: true,
-        },
-        navigationTiming: {
-          enabled: true,
-        },
-        resourceTiming: {
-          enabled: true,
-        },
+        resourceTiming: true,
+        longTasks: true,
+        navigationTiming: true,
+        resourceTiming: true,
       });
       
       // 启动监控

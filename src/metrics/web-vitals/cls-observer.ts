@@ -6,58 +6,114 @@ import { logger } from '../../utils/logger';
 /**
  * Cumulative Layout Shift (CLS) 观察者
  * 负责测量页面布局稳定性
+ * 使用 Google Web Vitals 推荐的会话窗口计算方法
  */
 export class CLSObserver extends BaseObserver {
   private clsObserver: PerformanceObserver | null = null;
-  private sessionValue: number = 0;
+  
+  // CLS评分阈值
+  private static readonly CLS_GOOD_THRESHOLD = 0.1;
+  private static readonly CLS_NEEDS_IMPROVEMENT_THRESHOLD = 0.25;
+  
+  // 记录页面首次隐藏的时间
+  private firstHiddenTime: number;
+  
+  // 会话窗口相关属性
   private sessionEntries: PerformanceEntry[] = [];
-  private prevSessionValue: number = 0;
+  private sessionValues: number[] = [0]; // 各个会话窗口的CLS值
+  private sessionGap: number = 1000; // 会话间隔时间，单位毫秒
+  private sessionMax: number = 5;    // 最大会话窗口数量
+  
+  // 上次报告的CLS值
+  private prevReportedValue: number = 0;
+  // 上次偏移的时间戳
+  private lastEntryTime: number = 0;
   
   constructor(options: ObserverOptions) {
     super(options);
+    
+    // 初始化首次隐藏时间
+    this.firstHiddenTime = this.initFirstHiddenTime();
+    
+    // 监听visibility变化以更新首次隐藏时间
+    this.setupFirstHiddenTimeListener();
+  }
+  
+  /**
+   * 获取页面首次隐藏的时间
+   */
+  private initFirstHiddenTime(): number {
+    // 如果页面已经是隐藏状态，返回0
+    if (typeof document !== 'undefined' && document.visibilityState === 'hidden') {
+      return 0;
+    }
+    // 否则返回无限大，表示页面尚未隐藏
+    return Infinity;
+  }
+  
+  /**
+   * 设置监听页面首次隐藏的事件
+   */
+  private setupFirstHiddenTimeListener(): void {
+    if (typeof document === 'undefined') return;
+    
+    const updateHiddenTime = () => {
+      if (document.visibilityState === 'hidden' && this.firstHiddenTime === Infinity) {
+        this.firstHiddenTime = performance.now();
+        logger.debug(`记录页面首次隐藏时间: ${this.firstHiddenTime}ms`);
+      }
+    };
+    
+    // 监听页面visibility变化
+    document.addEventListener('visibilitychange', updateHiddenTime, { once: true });
+    
+    // 页面卸载时也视为隐藏
+    document.addEventListener('unload', updateHiddenTime, { once: true });
+  }
+  
+  /**
+   * 为CLS指标分配评级
+   */
+  private assignCLSRating(value: number): 'good' | 'needs-improvement' | 'poor' {
+    if (value <= CLSObserver.CLS_GOOD_THRESHOLD) {
+      return 'good';
+    } else if (value <= CLSObserver.CLS_NEEDS_IMPROVEMENT_THRESHOLD) {
+      return 'needs-improvement';
+    } else {
+      return 'poor';
+    }
   }
   
   /**
    * 实现观察CLS的方法
    */
   protected observe(): void {
+    if (typeof PerformanceObserver === 'undefined') {
+      logger.error('PerformanceObserver API不可用，无法监控CLS');
+      return;
+    }
+    
     try {
       this.clsObserver = new PerformanceObserver((entryList) => {
         const entries = entryList.getEntries();
         
+        // 只处理页面在可见状态时发生的布局偏移
+        if (document.visibilityState !== 'visible') return;
+        
         for (const entry of entries) {
-          // Only count layout shifts without recent user input
+          // 只计算用户未操作时的布局偏移
           const layoutShift = entry as LayoutShift;
-          if (!layoutShift.hadRecentInput) {
-            this.sessionValue += layoutShift.value;
-            this.sessionEntries.push(layoutShift);
+          if (!layoutShift.hadRecentInput && layoutShift.startTime < this.firstHiddenTime) {
+            // 更新会话窗口
+            this.updateSessionWindows(layoutShift);
             
-            // Report CLS if it has changed significantly
-            if (this.sessionValue > this.prevSessionValue) {
-              const cls: MetricData = {
-                name: 'CLS',
-                value: this.sessionValue,
-                unit: '', // CLS没有单位，是无量纲数值
-                timestamp: performance.now(),
-                // 添加网络信息和其他上下文
-                context: this.getNetworkContext({
-                  shiftCount: this.sessionEntries.length,
-                  largestShift: Math.max(...this.sessionEntries.map((e) => (e as LayoutShift).value))
-                })
-              };
-              
-              // CLS rating thresholds
-              if (cls.value <= 0.1) {
-                cls.rating = 'good';
-              } else if (cls.value <= 0.25) {
-                cls.rating = 'needs-improvement';
-              } else {
-                cls.rating = 'poor';
-              }
-              
-              this.onUpdate(cls);
-              
-              this.prevSessionValue = this.sessionValue;
+            // 计算最终CLS值
+            const clsValue = this.calculateCLS();
+            
+            // 只有当CLS值显著变化时才报告
+            if (clsValue > this.prevReportedValue + 0.01 || clsValue < this.prevReportedValue - 0.01) {
+              this.reportCLS(clsValue);
+              this.prevReportedValue = clsValue;
             }
           }
         }
@@ -67,6 +123,81 @@ export class CLSObserver extends BaseObserver {
     } catch (error) {
       logger.error('CLS监控不受支持', error);
     }
+  }
+  
+  /**
+   * 更新CLS会话窗口
+   * 使用Google推荐的会话窗口方法
+   * @see https://web.dev/articles/evolving-cls
+   */
+  private updateSessionWindows(layoutShift: LayoutShift): void {
+    const currentTime = layoutShift.startTime;
+    
+    // 如果是新会话
+    if (currentTime - this.lastEntryTime > this.sessionGap) {
+      // 添加新会话
+      this.sessionValues.push(layoutShift.value);
+      this.sessionEntries = [layoutShift];
+      
+      // 如果会话窗口超过限制，移除最小的会话
+      if (this.sessionValues.length > this.sessionMax) {
+        // 找到最小的会话值及其索引
+        let minValue = Infinity;
+        let minIndex = 0;
+        
+        for (let i = 0; i < this.sessionValues.length; i++) {
+          if (this.sessionValues[i] < minValue) {
+            minValue = this.sessionValues[i];
+            minIndex = i;
+          }
+        }
+        
+        // 移除最小的会话
+        this.sessionValues.splice(minIndex, 1);
+      }
+    } else {
+      // 累加到当前会话
+      const currentSessionIndex = this.sessionValues.length - 1;
+      this.sessionValues[currentSessionIndex] += layoutShift.value;
+      this.sessionEntries.push(layoutShift);
+    }
+    
+    // 更新最后一次偏移时间
+    this.lastEntryTime = currentTime;
+  }
+  
+  /**
+   * 计算最终CLS值
+   * 取所有会话窗口中的最大值
+   */
+  private calculateCLS(): number {
+    return Math.max(...this.sessionValues);
+  }
+  
+  /**
+   * 报告CLS指标
+   */
+  private reportCLS(clsValue: number): void {
+    const cls: MetricData = {
+      name: 'CLS',
+      value: clsValue,
+      unit: '', // CLS没有单位，是无量纲数值
+      timestamp: performance.now(),
+      url: typeof window !== 'undefined' ? window.location.href : undefined,
+      // 添加网络信息和其他上下文
+      context: {
+        shiftCount: this.sessionEntries.length,
+        sessionValues: [...this.sessionValues],
+        largestSession: this.calculateCLS(),
+        firstHiddenTime: this.firstHiddenTime === Infinity ? null : this.firstHiddenTime
+      }
+    };
+    
+    // 设置评级
+    cls.rating = this.assignCLSRating(cls.value);
+    
+    logger.debug(`报告CLS值: ${cls.value}，评级: ${cls.rating}`);
+    this.onUpdate(cls);
   }
   
   /**
@@ -86,37 +217,16 @@ export class CLSObserver extends BaseObserver {
    * @param isVisible 页面是否可见
    */
   protected onVisibilityChange(isVisible: boolean): void {
-    if (!isVisible) {
-      // 当页面隐藏时，报告当前累积的CLS值
-      if (this.sessionValue > 0) {
-        const cls: MetricData = {
-          name: 'CLS',
-          value: this.sessionValue,
-          unit: '',
-          timestamp: performance.now(),
-          context: this.getNetworkContext({
-            shiftCount: this.sessionEntries.length,
-            largestShift: this.sessionEntries.length > 0 
-              ? Math.max(...this.sessionEntries.map((e) => (e as LayoutShift).value)) 
-              : 0,
-            visibilityChange: 'hidden'
-          })
-        };
-        
-        // CLS rating thresholds
-        if (cls.value <= 0.1) {
-          cls.rating = 'good';
-        } else if (cls.value <= 0.25) {
-          cls.rating = 'needs-improvement';
-        } else {
-          cls.rating = 'poor';
-        }
-        
-        logger.debug('页面隐藏，报告当前累积CLS值:', cls.value);
-        this.onUpdate(cls);
+    // 更新firstHiddenTime
+    if (!isVisible && this.firstHiddenTime === Infinity) {
+      this.firstHiddenTime = performance.now();
+      logger.debug(`页面隐藏，更新firstHiddenTime: ${this.firstHiddenTime}ms`);
+      
+      // 当页面隐藏时，报告当前的CLS值
+      const clsValue = this.calculateCLS();
+      if (clsValue > 0) {
+        this.reportCLS(clsValue);
       }
-    } else {
-      logger.debug('页面重新可见，继续累积CLS值');
     }
   }
   
@@ -126,9 +236,14 @@ export class CLSObserver extends BaseObserver {
    */
   protected onBFCacheRestore(event: PageTransitionEvent): void {
     // 重置CLS会话值
-    this.sessionValue = 0;
+    this.sessionValues = [0];
     this.sessionEntries = [];
-    this.prevSessionValue = 0;
+    this.prevReportedValue = 0;
+    this.lastEntryTime = 0;
+    
+    // 重置firstHiddenTime
+    this.firstHiddenTime = this.initFirstHiddenTime();
+    this.setupFirstHiddenTimeListener();
     
     logger.info('CLS值已在bfcache恢复后重置');
     

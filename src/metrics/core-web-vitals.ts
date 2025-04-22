@@ -59,9 +59,9 @@ export class CoreWebVitalsObserver {
     }
     
     // 启动FID监测
-    if (this.options.fid) {
-      this.startFIDMonitoring();
-    }
+    // if (this.options.fid) {
+    //   this.startFIDMonitoring();
+    // }
     
     // 启动CLS监测
     if (this.options.cls) {
