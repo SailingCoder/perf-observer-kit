@@ -65,9 +65,6 @@ export class PerfObserverKit {
    * 创建性能观察工具包实例
    */
   constructor(options: PerfObserverOptions = {}) {
-    // 处理向后兼容
-    this.handleBackwardCompatibility(options);
-    
     // 设置默认选项
     this.options = {
       onMetrics: options.onMetrics || (() => {}),
@@ -127,30 +124,6 @@ export class PerfObserverKit {
     
     // 基于debug选项设置默认日志级别
     return options.debug ? LogLevel.DEBUG : LogLevel.WARN;
-  }
-  
-  /**
-   * 处理向后兼容的配置选项
-   */
-  private handleBackwardCompatibility(options: PerfObserverOptions): void {
-    // 如果使用了旧的配置选项，但没有使用新的配置选项，则应用向后兼容
-    if (options.enableCoreWebVitals !== undefined && options.coreWebVitals === undefined) {
-      options.coreWebVitals = options.enableCoreWebVitals;
-    }
-    
-    if (options.enableResourceTiming !== undefined && options.resourceTiming === undefined) {
-      options.resourceTiming = options.enableResourceTiming;
-    }
-    
-    if (options.enableLongTasks !== undefined && options.longTasks === undefined) {
-      options.longTasks = options.enableLongTasks;
-    }
-    
-    if (options.enableNavigationTiming !== undefined && options.navigationTiming === undefined) {
-      options.navigationTiming = options.enableNavigationTiming;
-    }
-    
-    // 浏览器信息没有旧的配置选项
   }
   
   /**
@@ -257,6 +230,14 @@ export class PerfObserverKit {
     }
     
     logger.info('开始监控性能指标');
+    
+    // 采样率检查 - 如果配置了采样率，根据随机数决定是否收集数据
+    if (this.options.samplingRate > 0 && Math.random() > this.options.samplingRate) {
+      logger.debug(`根据采样率(${this.options.samplingRate})决定不收集此会话的性能数据`);
+      // 将状态设置为运行中，但实际不启动监控
+      this.isRunning = true;
+      return;
+    }
     
     // 核心Web指标 - 需要显式配置启用
     if (this.options.coreWebVitals.enabled) {
@@ -548,5 +529,34 @@ export class PerfObserverKit {
     } catch (error) {
       logger.error('指标更新回调执行失败:', error);
     }
+  }
+  
+  /**
+   * 获取库版本信息
+   */
+  getVersion(): string {
+    return '0.1.0'; // 确保此版本号与package.json中的版本一致
+  }
+  
+  /**
+   * 检查当前环境是否支持所有必要的API
+   */
+  static checkBrowserSupport(): { supported: boolean; details: Record<string, boolean> } {
+    const details = {
+      performanceAPI: browserSupport.hasPerformanceAPI(),
+      performanceObserver: browserSupport.hasPerformanceObserver(),
+      navigationTiming: browserSupport.supportsEntryType('navigation'),
+      longtask: browserSupport.supportsEntryType('longtask'),
+      resourceTiming: browserSupport.supportsEntryType('resource'),
+      paint: browserSupport.supportsEntryType('paint'),
+      largestContentfulPaint: browserSupport.supportsEntryType('largest-contentful-paint'),
+      firstInput: browserSupport.supportsEntryType('first-input'),
+      layoutShift: browserSupport.supportsEntryType('layout-shift')
+    };
+    
+    // 基本支持需要Performance API和PerformanceObserver
+    const supported = details.performanceAPI && details.performanceObserver;
+    
+    return { supported, details };
   }
 } 
