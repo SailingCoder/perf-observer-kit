@@ -119,6 +119,9 @@ const perfMonitor = new PerfObserverKit({
   // Custom sampling rate (ms, 0 means no sampling)
   samplingRate: 0,
   
+  // Automatically start monitoring when initialized (default: false)
+  autoStart: false,
+  
   // Important: Only Browser Information is enabled by default
   // All other modules must be explicitly enabled as shown below
   
@@ -194,7 +197,9 @@ const perfMonitor = new PerfObserverKit({
   // 4: DEBUG - Detailed debug messages, informational messages, warnings, and errors
   logLevel: 3,
   
-  // Auto-start monitoring when initialized
+  // Auto-start monitoring when initialized (default: false)
+  // When true, monitoring starts immediately after instantiation
+  // When false, you need to call perfMonitor.start() manually
   autoStart: true
 });
 

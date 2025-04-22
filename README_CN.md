@@ -64,7 +64,7 @@ const perfMonitor = new PerfObserverKit({
   },
   debug: false,             // 是否开启调试模式
   logLevel: 2,              // 日志级别 (0: 无日志, 1: 错误, 2: 警告, 3: 信息, 4: 调试)
-  autoStart: true,          // 是否自动开始监控
+  autoStart: true,          // 是否自动开始监控（默认为false，true时创建实例后立即开始监控，false时需要手动调用start()）
   samplingRate: 0,          // 采样率 (0-1), 0 表示不采样
   
   // 核心 Web 指标配置（需要显式开启）
