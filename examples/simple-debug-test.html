@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PerfObserverKit 调试功能测试</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    button {
+      padding: 8px 16px;
+      margin: 10px 5px 10px 0;
+      background: #0066cc;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .box {
+      padding: 20px;
+      margin: 20px 0;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body>
+  <h1>PerfObserverKit 调试功能测试</h1>
+  
+  <div class="box">
+    <h2>操作</h2>
+    <button id="test-debug">测试调试功能</button>
+    <button id="test-core-web-vitals">测试核心Web指标</button>
+  </div>
+  
+  <div class="box">
+    <h2>说明</h2>
+    <p>这个页面仅用于测试调试功能是否正常工作。</p>
+    <p>点击"测试调试功能"按钮查看控制台是否输出详细日志。</p>
+    <p>点击"测试核心Web指标"检查所有指标是否启用。</p>
+  </div>
+  
+  <!-- 加载库 -->
+  <script src="../dist/perf-observer-kit.browser.js"></script>
+  
+  <script>
+    // 页面加载完成后
+    document.addEventListener('DOMContentLoaded', function() {
+      console.log('页面已加载，准备测试调试功能...');
+      
+      // 检查库是否加载成功
+      if (typeof PerfObserverKit === 'undefined') {
+        console.error('无法加载PerfObserverKit库!');
+        return;
+      }
+      
+      console.log('PerfObserverKit库加载成功!');
+      
+      // 创建实例
+      const monitor = new PerfObserverKit.PerfObserverKit({
+        debug: true,           // 开启调试模式
+        logLevel: 4,           // 使用DEBUG日志级别
+        coreWebVitals: true,   // 启用所有核心Web指标
+        onMetrics: (type, metrics) => {
+          console.log(`收到${type}类型的指标:`, metrics);
+          
+          // 根据metrics类型正确处理
+          if (type === PerfObserverKit.MetricType.WEB_VITALS) {
+            // 针对核心Web指标的处理
+            const webVitals = metrics;
+            if (webVitals.fcp) {
+              console.log('FCP:', webVitals.fcp.value.toFixed(2) + 'ms');
+            }
+            if (webVitals.lcp) {
+              console.log('LCP:', webVitals.lcp.value.toFixed(2) + 'ms');
+            }
+            if (webVitals.cls) {
+              console.log('CLS:', webVitals.cls.value.toFixed(4));
+            }
+            if (webVitals.fid) {
+              console.log('FID:', webVitals.fid.value.toFixed(2) + 'ms');
+            }
+            if (webVitals.inp) {
+              console.log('INP:', webVitals.inp.value.toFixed(2) + 'ms');
+            }
+          }
+          // 可以根据需要添加其他类型的处理
+        }
+      });
+      
+      // 验证logger是否可访问
+      if (PerfObserverKit.logger) {
+        console.log('成功: logger对象可以访问!');
+        console.log('当前logger配置:', PerfObserverKit.logger.getConfiguration());
+      } else {
+        console.error('错误: 无法访问logger对象!');
+      }
+      
+      // 测试调试功能按钮
+      document.getElementById('test-debug').addEventListener('click', function() {
+        console.log('开始测试调试功能...');
+        
+        // 启动监控
+        monitor.start();
+        
+        // 查看内部配置
+        console.log('检查coreWebVitals配置:', monitor.options?.coreWebVitals);
+        
+        // 尝试触发一些调试日志
+        PerfObserverKit.logger.debug('这是一条测试调试日志');
+        PerfObserverKit.logger.info('这是一条测试信息日志');
+        PerfObserverKit.logger.warn('这是一条测试警告日志');
+        
+        // 直接设置logger选项
+        PerfObserverKit.logger.setOptions({
+          disableInProduction: false,
+          level: PerfObserverKit.LogLevel.DEBUG
+        });
+        
+        console.log('调试功能测试完成');
+      });
+      
+      // 测试核心Web指标按钮
+      document.getElementById('test-core-web-vitals').addEventListener('click', function() {
+        console.log('开始测试核心Web指标...');
+        
+        // 检查当前指标
+        const metrics = monitor.getMetrics();
+        console.log('当前收集的指标:', metrics);
+        
+        // 查看内部配置
+        console.log('核心Web指标配置:', monitor.options?.coreWebVitals);
+        
+        // 手动触发交互，以便测试FID和INP
+        document.body.click();
+        
+        console.log('核心Web指标测试完成');
+      });
+    });
+  </script>
+</body>
+</html> 

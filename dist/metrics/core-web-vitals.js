@@ -15,9 +15,9 @@ export class CoreWebVitalsObserver {
         this.inpObserver = null;
         this.onUpdate = options.onUpdate;
         this.options = {
-            // 默认不启用，必须显式配置
+            // 默认启用
             enabled: options.enabled !== undefined ? options.enabled : true,
-            // 所有指标默认都不启用，必须显式配置启用
+            // FCP和LCP默认启用，其他指标默认不启用
             fcp: options.fcp !== undefined ? options.fcp : true,
             lcp: options.lcp !== undefined ? options.lcp : true,
             fid: options.fid !== undefined ? options.fid : false,

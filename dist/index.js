@@ -1460,9 +1460,9 @@ class CoreWebVitalsObserver {
         this.inpObserver = null;
         this.onUpdate = options.onUpdate;
         this.options = {
-            // 默认不启用，必须显式配置
+            // 默认启用
             enabled: options.enabled !== undefined ? options.enabled : true,
-            // 所有指标默认都不启用，必须显式配置启用
+            // FCP和LCP默认启用，其他指标默认不启用
             fcp: options.fcp !== undefined ? options.fcp : true,
             lcp: options.lcp !== undefined ? options.lcp : true,
             fid: options.fid !== undefined ? options.fid : false,
@@ -2459,7 +2459,7 @@ class BrowserInfoObserver {
 
 // 从package.json获取版本号 - 这个值会在构建时被rollup插件替换
 // 使用字符串形式，避免TypeScript编译错误
-const VERSION = '0.0.3-beta1';
+const VERSION = '0.0.3';
 /**
  * 性能观察工具包 - 性能监控的主类
  */
@@ -2638,8 +2638,8 @@ class PerfObserverKit {
             // 处理配置选项，设置默认值
             return {
                 ...normalizedOptions,
-                fcp: normalizedOptions.fcp !== undefined ? normalizedOptions.fcp : false,
-                lcp: normalizedOptions.lcp !== undefined ? normalizedOptions.lcp : false,
+                fcp: normalizedOptions.fcp !== undefined ? normalizedOptions.fcp : true,
+                lcp: normalizedOptions.lcp !== undefined ? normalizedOptions.lcp : true,
                 fid: normalizedOptions.fid !== undefined ? normalizedOptions.fid : false,
                 cls: normalizedOptions.cls !== undefined ? normalizedOptions.cls : false,
                 inp: normalizedOptions.inp !== undefined ? normalizedOptions.inp : false,

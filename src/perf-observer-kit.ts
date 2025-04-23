@@ -252,8 +252,8 @@ export class PerfObserverKit {
       // 处理配置选项，设置默认值
       return {
         ...normalizedOptions,
-        fcp: normalizedOptions.fcp !== undefined ? normalizedOptions.fcp : false,
-        lcp: normalizedOptions.lcp !== undefined ? normalizedOptions.lcp : false,
+        fcp: normalizedOptions.fcp !== undefined ? normalizedOptions.fcp : true,
+        lcp: normalizedOptions.lcp !== undefined ? normalizedOptions.lcp : true,
         fid: normalizedOptions.fid !== undefined ? normalizedOptions.fid : false,
         cls: normalizedOptions.cls !== undefined ? normalizedOptions.cls : false,
         inp: normalizedOptions.inp !== undefined ? normalizedOptions.inp : false,
