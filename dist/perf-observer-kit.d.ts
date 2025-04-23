@@ -8,7 +8,7 @@ export declare class PerfObserverKit {
     private coreWebVitalsObserver;
     private resourceTimingObserver;
     private longTasksObserver;
-    private navigationTimingObserver;
+    private navigationObserver;
     private browserInfoObserver;
     private metrics;
     private isRunning;
@@ -91,7 +91,7 @@ export declare class PerfObserverKit {
     /**
      * 开始监控导航计时
      */
-    private startNavigationTimingMonitoring;
+    private startNavigationMonitoring;
     /**
      * 开始监控浏览器信息
      */
@@ -110,5 +110,15 @@ export declare class PerfObserverKit {
     static checkBrowserSupport(): {
         supported: boolean;
         details: Record<string, boolean>;
+    };
+    getStatus(): {
+        isRunning: boolean;
+        metrics: {
+            coreWebVitals: boolean;
+            resources: boolean;
+            longTasks: boolean;
+            navigation: boolean;
+            browserInfo: boolean;
+        };
     };
 }

@@ -1,4 +1,4 @@
-import { MetricData, CoreWebVitalsMetrics } from '../../types';
+import { MetricData, CoreWebVitalsMetrics, NavigationMetrics } from '../../types';
 /**
  * 布局偏移接口定义
  */
@@ -92,24 +92,14 @@ export interface LongTasksObserverOptions {
 }
 /**
  * 导航计时观察者选项
- * 用于监控页面加载过程中的各个阶段性能
  */
-export interface NavigationTimingObserverOptions {
-    /** 指标更新回调函数，用于接收导航计时性能数据 */
-    onUpdate: (metrics: any) => void;
-    /** 是否启用该观察者，默认为true */
+export interface NavigationObserverOptions {
+    /** 指标更新回调函数 */
+    onUpdate: (metrics: NavigationMetrics) => void;
+    /** 是否启用该观察者 */
     enabled?: boolean;
-    /**
-     * 是否包含原始计时数据
-     * 如果为true，将包含更多详细的原始性能条目数据
-     */
+    /** 是否包含原始计时数据 */
     includeRawTiming?: boolean;
-    /**
-     * 最大等待时间（毫秒）
-     * 在这段时间后，如果仍未收集到完整数据，将强制上报当前已收集的数据
-     * 默认为10000ms
-     */
-    maxWaitTime?: number;
 }
 /**
  * 页面可见性相关处理程序类型

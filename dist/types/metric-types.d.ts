@@ -67,6 +67,7 @@ export interface ResourceMetrics {
         saveData?: boolean;
     };
     timestamp?: number;
+    metric?: string;
 }
 /**
  * 长任务指标数据
@@ -75,7 +76,8 @@ export interface LongTaskMetrics {
     duration: number;
     startTime: number;
     attribution?: string;
-    timestamp: number;
+    timestamp?: number;
+    metric?: string;
 }
 /**
  * 导航计时指标数据

@@ -39,9 +39,9 @@ const perfMonitor = new PerfObserverKit({
   },
   // 启用所有监控模块
   coreWebVitals: true, // default FCP LCP
-  resourceTiming: true,
+  resources: true,
   longTasks: true,
-  navigationTiming: true
+  navigation: true
 });
 
 // 开始监控
@@ -99,7 +99,7 @@ const perfMonitor = new PerfObserverKit({
 
 ```javascript
 const perfMonitor = new PerfObserverKit({
-  resourceTiming: {
+  resources: {
     enabled: true,
     excludedPatterns: [/analytics\.com/, /tracker/],  // 排除分析工具
     allowedTypes: ['script', 'img', 'css', 'fetch'],  // 要监控的类型
@@ -144,7 +144,7 @@ import { PerfObserverKit } from 'perf-observer-kit';
 
 // 启用导航计时监控
 const perfObserver = new PerfObserverKit({
-  navigationTiming: {
+  navigation: {
     enabled: true,
     includeRawTiming: false, // 是否包含原始导航计时数据
     onUpdate: (metrics) => {
@@ -195,9 +195,9 @@ const perfMonitor = new PerfObserverKit({
   
   // 模块配置
   coreWebVitals: true,       // 启用核心网页指标（布尔值或对象）
-  resourceTiming: true,      // 启用资源计时（布尔值或对象）
+  resources: true,           // 启用资源计时（布尔值或对象）
   longTasks: true,           // 启用长任务（布尔值或对象）
-  navigationTiming: true,    // 启用导航计时（布尔值或对象）
+  navigation: true,    // 启用导航计时（布尔值或对象）
   browserInfo: true          // 启用浏览器信息（布尔值或对象）
 });
 ```

@@ -185,16 +185,13 @@
       </div>
 
       <div class="module">
-        <div class="module-title">
-          <input type="checkbox" id="resourceTiming" checked>
-          <h3>Resource Timing</h3>
-        </div>
-        <div class="module-content">
-          <div>Max Entries: <input type="number" id="resourceMaxEntries" value="50" min="1" max="100"></div>
-          <div>
-            <label for="resourceExcludedPatterns">Excluded Patterns:</label>
-            <input type="text" id="resourceExcludedPatterns" value="google-analytics,hot-update.js">
-          </div>
+        <label>
+          <input type="checkbox" id="resources" checked>
+          <span>资源计时</span>
+        </label>
+        <div class="module-metrics">
+          <h3>资源计时指标</h3>
+          <div id="resourcesMetrics" class="metric-value">No resource timing data available yet</div>
         </div>
       </div>
 
@@ -210,7 +207,7 @@
 
       <div class="module">
         <div class="module-title">
-          <input type="checkbox" id="navigationTiming" checked>
+          <input type="checkbox" id="navigation" checked>
           <h3>Navigation Timing</h3>
         </div>
       </div>
@@ -248,7 +245,7 @@
       
       <div class="metric-group">
         <h3>Navigation Timing</h3>
-        <div id="navigationTimingMetrics" class="metric-value">No navigation timing data available yet</div>
+        <div id="navigationMetrics" class="metric-value">No navigation timing data available yet</div>
       </div>
       
       <div class="metric-group">
@@ -285,11 +282,9 @@
         },
         
         // Resource Timing configuration
-        resourceTiming: {
-          enabled: document.getElementById('resourceTiming').checked,
-          excludedPatterns: document.getElementById('resourceExcludedPatterns').value.split(','),
-          allowedTypes: ['script', 'img', 'css', 'fetch'],
-          maxEntries: parseInt(document.getElementById('resourceMaxEntries').value, 10)
+        resources: {
+          enabled: document.getElementById('resources').checked,
+          maxResources: 10 // 限制为最近10个资源
         },
         
         // Long Tasks configuration
@@ -300,8 +295,8 @@
         },
         
         // Navigation Timing configuration
-        navigationTiming: {
-          enabled: document.getElementById('navigationTiming').checked,
+        navigation: {
+          enabled: document.getElementById('navigation').checked,
           includeRawTiming: false
         },
         
@@ -343,7 +338,7 @@
       document.getElementById('coreWebVitalsMetrics').innerHTML = '<p>Waiting for metrics...</p>';
       document.getElementById('resourceTimingMetrics').innerHTML = '<p>Waiting for metrics...</p>';
       document.getElementById('longTasksMetrics').innerHTML = '<p>Waiting for metrics...</p>';
-      document.getElementById('navigationTimingMetrics').innerHTML = '<p>Waiting for metrics...</p>';
+      document.getElementById('navigationMetrics').innerHTML = '<p>Waiting for metrics...</p>';
       console.log('Metrics display reset');
     }
     
@@ -413,29 +408,21 @@
           }
           break;
           
-        case PerfObserverKit.MetricType.RESOURCES:
-          // 更新资源计时
-          if (document.getElementById('resourceTiming').checked) {
-            const resources = metrics.slice(0, 10); // 仅显示前10个资源
-            let html = '';
+        case PerfObserverKit.MetricType.RESOURCE:
+          // 如果资源监控已启用，则显示最新的资源
+          if (document.getElementById('resources').checked) {
+            // 显示最新的5个资源
+            const resourcesHTML = metrics.map(resource => {
+              return `<div class="resource-item">
+                <strong>${resource.name.split('/').pop() || resource.name}</strong> (${resource.initiatorType})<br>
+                加载时间: ${resource.duration.toFixed(2)}ms, 
+                大小: ${resource.transferSize ? (resource.transferSize / 1024).toFixed(2) + 'KB' : 'N/A'}<br>
+                ${resource.ttfb ? 'TTFB: ' + resource.ttfb.toFixed(2) + 'ms, ' : ''}
+                ${resource.dnsTime ? 'DNS: ' + resource.dnsTime.toFixed(2) + 'ms' : ''}
+              </div>`;
+            }).join('');
             
-            if (resources.length > 0) {
-              html += '<table class="metrics-table"><tr><th>Resource</th><th>Type</th><th>Duration</th></tr>';
-              
-              resources.forEach(resource => {
-                const shortName = resource.name.split('/').pop();
-                html += `<tr>
-                  <td title="${resource.name}">${shortName}</td>
-                  <td>${resource.initiatorType}</td>
-                  <td>${formatValue(resource.duration)}</td>
-                </tr>`;
-              });
-              
-              html += '</table>';
-              html += `<div class="metric-note">Showing ${resources.length} of ${perfMonitor.getMetrics().resources.length} resources</div>`;
-            }
-            
-            document.getElementById('resourceTimingMetrics').innerHTML = html || 'No resources loaded yet';
+            document.getElementById('resourcesMetrics').innerHTML = resourcesHTML || 'No resources loaded yet';
           }
           break;
           
@@ -464,7 +451,7 @@
           
         case PerfObserverKit.MetricType.NAVIGATION:
           // 更新导航计时
-          if (document.getElementById('navigationTiming').checked) {
+          if (document.getElementById('navigation').checked) {
             let html = '';
             
             if (metrics.ttfb) {
@@ -485,7 +472,7 @@
               </div>`;
             }
             
-            document.getElementById('navigationTimingMetrics').innerHTML = html || 'No navigation timing data available yet';
+            document.getElementById('navigationMetrics').innerHTML = html || 'No navigation timing data available yet';
           }
           break;
           

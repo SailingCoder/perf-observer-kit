@@ -136,9 +136,9 @@
             cls: true,
             inp: true
           },
-          resourceTiming: true,
+          resources: true,
           longTasks: true,
-          navigationTiming: true,
+          navigation: true,
           debug: true
         });
         
@@ -217,11 +217,11 @@
         
         // Update Navigation Timing display
         function updateNavigationTimingDisplay(metrics) {
-          const navigationTimingEl = document.getElementById('navigation-timing');
-          let navigationTimingHTML = '';
+          const navigationEl = document.getElementById('navigation-timing');
+          let navigationHTML = '';
           
           if (metrics.ttfb) {
-            navigationTimingHTML += `
+            navigationHTML += `
               <div class="metric">
                 <div class="name">Time to First Byte (TTFB)</div>
                 <div class="value">${metrics.ttfb.toFixed(2)} ms</div>
@@ -230,7 +230,7 @@
           }
           
           if (metrics.domContentLoaded) {
-            navigationTimingHTML += `
+            navigationHTML += `
               <div class="metric">
                 <div class="name">DOM Content Loaded</div>
                 <div class="value">${metrics.domContentLoaded.toFixed(2)} ms</div>
@@ -239,7 +239,7 @@
           }
           
           if (metrics.loadEvent) {
-            navigationTimingHTML += `
+            navigationHTML += `
               <div class="metric">
                 <div class="name">Load Event</div>
                 <div class="value">${metrics.loadEvent.toFixed(2)} ms</div>
@@ -247,8 +247,8 @@
             `;
           }
           
-          if (navigationTimingHTML) {
-            navigationTimingEl.innerHTML = navigationTimingHTML;
+          if (navigationHTML) {
+            navigationEl.innerHTML = navigationHTML;
           }
         }
         

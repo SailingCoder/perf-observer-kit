@@ -72,7 +72,8 @@ export interface ResourceMetrics {
     rtt?: number; // 往返时间 (ms)
     saveData?: boolean; // 是否启用数据节省模式
   }; // 网络性能指标
-  timestamp?:number
+  timestamp?:number,
+  metric?:string
 }
 
 /**
@@ -82,7 +83,8 @@ export interface LongTaskMetrics {
   duration: number; // 任务持续时间
   startTime: number; // 任务开始时间
   attribution?: string; // 任务归属
-  timestamp: number; // 记录时的时间戳
+  timestamp?: number; // 记录时的时间戳
+  metric?:string
 }
 
 /**

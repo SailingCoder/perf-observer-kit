@@ -1,20 +1,20 @@
 import { NavigationMetrics } from '../types';
-import { NavigationTimingObserverOptions } from './web-vitals/types';
+import { NavigationObserverOptions } from './web-vitals/types';
 /**
  * 导航计时观察者
- * 负责监控页面导航过程中的性能指标，包括TTFB等
+ * 用于收集页面加载相关的导航计时性能指标
  */
-export declare class NavigationTimingObserver {
+export declare class NavigationObserver {
     private metrics;
-    private onUpdate;
-    private options;
     private started;
     private hasReportedMetrics;
+    private onUpdate;
+    private options;
     /**
      * 创建导航计时观察者实例
-     * @param options 导航计时观察者配置
+     * @param options 配置选项
      */
-    constructor(options: NavigationTimingObserverOptions);
+    constructor(options: NavigationObserverOptions);
     /**
      * 开始监控导航计时性能
      */

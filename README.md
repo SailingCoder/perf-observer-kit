@@ -39,9 +39,9 @@ const perfMonitor = new PerfObserverKit({
   },
   // Enable all monitoring modules
   coreWebVitals: true, // default FCP LCP
-  resourceTiming: true,
+  resources: true,
   longTasks: true,
-  navigationTiming: true
+  navigation: true
 });
 
 // Start monitoring
@@ -99,11 +99,11 @@ For detailed information on CLS implementation and strategies, see the [Cumulati
 
 ```javascript
 const perfMonitor = new PerfObserverKit({
-  resourceTiming: {
+  resources: {
     enabled: true,
-    excludedPatterns: [/analytics\.com/, /tracker/],  // Exclude analytics
-    allowedTypes: ['script', 'img', 'css', 'fetch'],  // Types to monitor
-    maxEntries: 500                                   // Max entries to store
+    maxResources: 100,
+    excludedPatterns: [/google-analytics/, /doubleclick/],  // Exclude analytics
+    allowedTypes: ['script', 'link', 'img', 'css']  // Types to monitor
   }
 });
 ```
@@ -139,7 +139,7 @@ Detects JavaScript tasks that block the main thread for more than 50ms, providin
 
 ```javascript
 const perfMonitor = new PerfObserverKit({
-  navigationTiming: {
+  navigation: {
     enabled: true,           // Enable navigation timing monitoring
     includeRawTiming: false, // Whether to include raw navigation timing data
     onUpdate: (metrics) => {
@@ -196,9 +196,9 @@ const perfMonitor = new PerfObserverKit({
   
   // Module configurations
   coreWebVitals: true,       // Enable Core Web Vitals (boolean or object)
-  resourceTiming: true,      // Enable Resource Timing (boolean or object)
+  resources: true,           // Enable Resource Timing (boolean or object)
   longTasks: true,           // Enable Long Tasks (boolean or object)
-  navigationTiming: true,    // Enable Navigation Timing (boolean or object)
+  navigation: true,    // Enable Navigation Timing (boolean or object)
   browserInfo: true          // Enable Browser Info (boolean or object)
 });
 ```

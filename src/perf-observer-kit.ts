@@ -5,13 +5,13 @@ import {
   ResourceMetrics,
   LongTaskMetrics,
   NavigationMetrics,
-  ResourceTimingOptions,
   CoreWebVitalsOptions,
   LongTasksOptions,
-  NavigationTimingOptions,
+  NavigationOptions,
   BrowserInfoOptions,
   BrowserInfo,
-  MetricType
+  MetricType,
+  ResourceOptions
 } from './types';
 import { browserSupport } from './utils';
 import { logger, LogLevel } from './utils/logger';
@@ -20,7 +20,7 @@ import { logger, LogLevel } from './utils/logger';
 import { CoreWebVitalsObserver } from './metrics/core-web-vitals';
 import { ResourceTimingObserver } from './metrics/resource-timing';
 import { LongTasksObserver } from './metrics/long-tasks';
-import { NavigationTimingObserver } from './metrics/navigation-timing';
+import { NavigationObserver } from './metrics/navigation-timing';
 import { BrowserInfoObserver } from './metrics/browser-observer';
 
 // 从package.json获取版本号 - 这个值会在构建时被rollup插件替换
@@ -38,16 +38,16 @@ export class PerfObserverKit {
     autoStart: boolean;
     samplingRate: number;
     coreWebVitals: CoreWebVitalsOptions;
-    resourceTiming: Required<ResourceTimingOptions>;
+    resources: Required<ResourceOptions>;
     longTasks: LongTasksOptions;
-    navigationTiming: NavigationTimingOptions;
+    navigation: NavigationOptions;
     browserInfo: BrowserInfoOptions;
   };
   
   private coreWebVitalsObserver: CoreWebVitalsObserver | null = null;
   private resourceTimingObserver: ResourceTimingObserver | null = null;
   private longTasksObserver: LongTasksObserver | null = null;
-  private navigationTimingObserver: NavigationTimingObserver | null = null;
+  private navigationObserver: NavigationObserver | null = null;
   private browserInfoObserver: BrowserInfoObserver | null = null;
   
   private metrics: PerformanceMetrics = {
@@ -85,13 +85,13 @@ export class PerfObserverKit {
       coreWebVitals: this.normalizeCoreWebVitalsOptions(options.coreWebVitals),
       
       // 资源计时配置
-      resourceTiming: this.normalizeResourceOptions(options.resourceTiming),
+      resources: this.normalizeResourceOptions(options.resources),
       
       // 长任务配置
       longTasks: this.normalizeModuleOptions(options.longTasks, false),
       
       // 导航计时配置
-      navigationTiming: this.normalizeModuleOptions(options.navigationTiming, false),
+      navigation: this.normalizeModuleOptions(options.navigation, false),
       
       // 浏览器信息配置 - 唯一默认启用的模块
       browserInfo: this.normalizeModuleOptions(options.browserInfo, true)
@@ -199,28 +199,30 @@ export class PerfObserverKit {
    * 规范化资源计时选项
    */
   private normalizeResourceOptions(
-    options: boolean | ResourceTimingOptions | undefined
-  ): Required<ResourceTimingOptions> {
+    options: boolean | ResourceOptions | undefined
+  ): Required<ResourceOptions> {
     try {
-      // 默认不启用，必须显式配置
-      const normalizedOptions = this.normalizeModuleOptions(options, false);
+      // 首先使用通用方法获取基础选项
+      const normalizedOptions = this.normalizeModuleOptions(options, true);
       
+      // 处理配置选项，设置默认值
       return {
-        enabled: normalizedOptions.enabled,
+        ...normalizedOptions,
+        maxResources: normalizedOptions.maxResources !== undefined ? normalizedOptions.maxResources : 100,
         excludedPatterns: normalizedOptions.excludedPatterns || [],
-        allowedTypes: normalizedOptions.allowedTypes || 
-                      ['script', 'link', 'img', 'css', 'font'],
-        maxEntries: normalizedOptions.maxEntries || 1000,
-        maxResources: normalizedOptions.maxResources || 100 // 从配置中读取值
+        allowedTypes: normalizedOptions.allowedTypes || [], // 默认允许所有类型
+        captureNetworkInfo: normalizedOptions.captureNetworkInfo !== undefined ? normalizedOptions.captureNetworkInfo : true,
+        maxEntries: normalizedOptions.maxEntries !== undefined ? normalizedOptions.maxEntries : 1000
       };
     } catch (error) {
       logger.error('规范化资源计时选项失败:', error);
-      return {
-        enabled: false, // 默认不启用
+      return { 
+        enabled: false, 
+        maxResources: 100,
         excludedPatterns: [],
-        allowedTypes: ['script', 'link', 'img', 'css', 'font'],
-        maxEntries: 1000,
-        maxResources: 100
+        allowedTypes: [],
+        captureNetworkInfo: true,
+        maxEntries: 1000
       };
     }
   }
@@ -296,9 +298,9 @@ export class PerfObserverKit {
     
     // 使用通用方法启动各个观察器
     this.startObserver('coreWebVitals', this.startCoreWebVitalsMonitoring.bind(this));
-    this.startObserver('resourceTiming', this.startResourceTimingMonitoring.bind(this));
+    this.startObserver('resources', this.startResourceTimingMonitoring.bind(this));
     this.startObserver('longTasks', this.startLongTasksMonitoring.bind(this));
-    this.startObserver('navigationTiming', this.startNavigationTimingMonitoring.bind(this));
+    this.startObserver('navigation', this.startNavigationMonitoring.bind(this));
     
     // 浏览器信息 - 默认启用，无论配置如何都启动
     this.startBrowserInfoMonitoring();
@@ -310,7 +312,7 @@ export class PerfObserverKit {
   /**
    * 通用启动观察器方法
    */
-  private startObserver(name: keyof Pick<PerfObserverKit['options'], 'coreWebVitals' | 'resourceTiming' | 'longTasks' | 'navigationTiming'>, startMethod: () => void): void {
+  private startObserver(name: keyof Pick<PerfObserverKit['options'], 'coreWebVitals' | 'resources' | 'longTasks' | 'navigation'>, startMethod: () => void): void {
     const option = this.options[name];
     if (option && option.enabled) {
       startMethod();
@@ -332,14 +334,14 @@ export class PerfObserverKit {
     this.cleanupObserver(this.coreWebVitalsObserver);
     this.cleanupObserver(this.resourceTimingObserver);
     this.cleanupObserver(this.longTasksObserver);
-    this.cleanupObserver(this.navigationTimingObserver);
+    this.cleanupObserver(this.navigationObserver);
     this.cleanupObserver(this.browserInfoObserver);
     
     // 重置所有观察器引用
     this.coreWebVitalsObserver = null;
     this.resourceTimingObserver = null;
     this.longTasksObserver = null;
-    this.navigationTimingObserver = null;
+    this.navigationObserver = null;
     this.browserInfoObserver = null;
     
     this.isRunning = false;
@@ -426,9 +428,9 @@ export class PerfObserverKit {
         isRunning: this.isRunning,
         activeObservers: {
           coreWebVitals: !!this.coreWebVitalsObserver,
-          resourceTiming: !!this.resourceTimingObserver,
+          resources: !!this.resourceTimingObserver,
           longTasks: !!this.longTasksObserver,
-          navigationTiming: !!this.navigationTimingObserver,
+          navigation: !!this.navigationObserver,
           browserInfo: !!this.browserInfoObserver
         }
       });
@@ -492,7 +494,7 @@ export class PerfObserverKit {
         return;
       }
       
-      const options = this.options.resourceTiming;
+      const options = this.options.resources;
       
       this.resourceTimingObserver = new ResourceTimingObserver(
         (resources: ResourceMetrics[]) => {
@@ -545,16 +547,16 @@ export class PerfObserverKit {
   /**
    * 开始监控导航计时
    */
-  private startNavigationTimingMonitoring(): void {
+  private startNavigationMonitoring(): void {
     try {
       if (!browserSupport.supportsEntryType('navigation')) {
         logger.warn('当前浏览器不支持导航计时监控');
         return;
       }
       
-      const options = this.options.navigationTiming;
+      const options = this.options.navigation;
       
-      this.navigationTimingObserver = new NavigationTimingObserver({
+      this.navigationObserver = new NavigationObserver({
         onUpdate: (navigationMetrics: NavigationMetrics) => {
           this.metrics.navigation = navigationMetrics;
           this.notifyMetricsUpdate(MetricType.NAVIGATION, navigationMetrics);
@@ -563,7 +565,7 @@ export class PerfObserverKit {
         includeRawTiming: options.includeRawTiming
       });
       
-      this.navigationTimingObserver.start();
+      this.navigationObserver.start();
       logger.debug('导航计时监控已启动');
     } catch (error) {
       logger.error('启动导航计时监控失败:', error);
@@ -623,9 +625,9 @@ export class PerfObserverKit {
     const details = {
       performanceAPI: browserSupport.hasPerformanceAPI(),
       performanceObserver: browserSupport.hasPerformanceObserver(),
-      navigationTiming: browserSupport.supportsEntryType('navigation'),
+      navigation: browserSupport.supportsEntryType('navigation'),
       longtask: browserSupport.supportsEntryType('longtask'),
-      resourceTiming: browserSupport.supportsEntryType('resource'),
+      resources: browserSupport.supportsEntryType('resource'),
       paint: browserSupport.supportsEntryType('paint'),
       largestContentfulPaint: browserSupport.supportsEntryType('largest-contentful-paint'),
       firstInput: browserSupport.supportsEntryType('first-input'),
@@ -636,5 +638,27 @@ export class PerfObserverKit {
     const supported = details.performanceAPI && details.performanceObserver;
     
     return { supported, details };
+  }
+
+  getStatus(): {
+    isRunning: boolean;
+    metrics: {
+      coreWebVitals: boolean;
+      resources: boolean;
+      longTasks: boolean;
+      navigation: boolean;
+      browserInfo: boolean;
+    };
+  } {
+    return {
+      isRunning: this.isRunning,
+      metrics: {
+        coreWebVitals: !!this.coreWebVitalsObserver,
+        resources: !!this.resourceTimingObserver,
+        longTasks: !!this.longTasksObserver,
+        navigation: !!this.navigationObserver,
+        browserInfo: !!this.browserInfoObserver
+      }
+    };
   }
 } 

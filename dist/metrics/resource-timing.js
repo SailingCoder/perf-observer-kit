@@ -130,7 +130,8 @@ export class ResourceTimingObserver {
             requestTime,
             responseTime,
             networkMetrics,
-            timestamp: new Date().getTime()
+            timestamp: new Date().getTime(),
+            metric: 'resources'
         };
     }
     /**

@@ -1780,7 +1780,8 @@
                 requestTime,
                 responseTime,
                 networkMetrics,
-                timestamp: new Date().getTime()
+                timestamp: new Date().getTime(),
+                metric: 'resources'
             };
         }
         /**
@@ -1972,12 +1973,12 @@
 
     /**
      * 导航计时观察者
-     * 负责监控页面导航过程中的性能指标，包括TTFB等
+     * 用于收集页面加载相关的导航计时性能指标
      */
-    class NavigationTimingObserver {
+    class NavigationObserver {
         /**
          * 创建导航计时观察者实例
-         * @param options 导航计时观察者配置
+         * @param options 配置选项
          */
         constructor(options) {
             this.metrics = {};
@@ -1985,9 +1986,9 @@
             this.hasReportedMetrics = false;
             this.onUpdate = options.onUpdate;
             this.options = {
-                enabled: true,
-                includeRawTiming: false,
-                ...options
+                enabled: options.enabled !== undefined ? options.enabled : true,
+                includeRawTiming: options.includeRawTiming || false,
+                onUpdate: options.onUpdate
             };
             logger.debug('导航计时观察者已创建，配置:', {
                 enabled: this.options.enabled,
@@ -2141,7 +2142,7 @@
             // 计算所有时间指标
             const timingMetrics = this.calculateTimingMetrics(entry);
             // 获取网络信息
-            const networkInfo = NetworkMetricsCollector.getNetworkInformation();
+            const networkMetrics = NetworkMetricsCollector.getNetworkInformation();
             // 获取当前页面URL
             const pageUrl = typeof window !== 'undefined' ? window.location.href : entry.name;
             // 记录关键性能指标
@@ -2156,7 +2157,8 @@
             this.metrics = {
                 ...timingMetrics, // 添加所有计算的时间指标
                 url: pageUrl,
-                networkInfo,
+                metric: 'navigation',
+                networkMetrics,
                 timestamp: new Date().getTime(),
                 complete: true // 标记这是一个完整的导航指标
             };
@@ -2477,7 +2479,7 @@
             this.coreWebVitalsObserver = null;
             this.resourceTimingObserver = null;
             this.longTasksObserver = null;
-            this.navigationTimingObserver = null;
+            this.navigationObserver = null;
             this.browserInfoObserver = null;
             this.metrics = {
                 coreWebVitals: {},
@@ -2503,11 +2505,11 @@
                 // 核心Web指标配置
                 coreWebVitals: this.normalizeCoreWebVitalsOptions(options.coreWebVitals),
                 // 资源计时配置
-                resourceTiming: this.normalizeResourceOptions(options.resourceTiming),
+                resources: this.normalizeResourceOptions(options.resources),
                 // 长任务配置
                 longTasks: this.normalizeModuleOptions(options.longTasks, false),
                 // 导航计时配置
-                navigationTiming: this.normalizeModuleOptions(options.navigationTiming, false),
+                navigation: this.normalizeModuleOptions(options.navigation, false),
                 // 浏览器信息配置 - 唯一默认启用的模块
                 browserInfo: this.normalizeModuleOptions(options.browserInfo, true)
             };
@@ -2599,25 +2601,27 @@
          */
         normalizeResourceOptions(options) {
             try {
-                // 默认不启用，必须显式配置
-                const normalizedOptions = this.normalizeModuleOptions(options, false);
+                // 首先使用通用方法获取基础选项
+                const normalizedOptions = this.normalizeModuleOptions(options, true);
+                // 处理配置选项，设置默认值
                 return {
-                    enabled: normalizedOptions.enabled,
+                    ...normalizedOptions,
+                    maxResources: normalizedOptions.maxResources !== undefined ? normalizedOptions.maxResources : 100,
                     excludedPatterns: normalizedOptions.excludedPatterns || [],
-                    allowedTypes: normalizedOptions.allowedTypes ||
-                        ['script', 'link', 'img', 'css', 'font'],
-                    maxEntries: normalizedOptions.maxEntries || 1000,
-                    maxResources: normalizedOptions.maxResources || 100 // 从配置中读取值
+                    allowedTypes: normalizedOptions.allowedTypes || [], // 默认允许所有类型
+                    captureNetworkInfo: normalizedOptions.captureNetworkInfo !== undefined ? normalizedOptions.captureNetworkInfo : true,
+                    maxEntries: normalizedOptions.maxEntries !== undefined ? normalizedOptions.maxEntries : 1000
                 };
             }
             catch (error) {
                 logger.error('规范化资源计时选项失败:', error);
                 return {
-                    enabled: false, // 默认不启用
+                    enabled: false,
+                    maxResources: 100,
                     excludedPatterns: [],
-                    allowedTypes: ['script', 'link', 'img', 'css', 'font'],
-                    maxEntries: 1000,
-                    maxResources: 100
+                    allowedTypes: [],
+                    captureNetworkInfo: true,
+                    maxEntries: 1000
                 };
             }
         }
@@ -2685,9 +2689,9 @@
             }
             // 使用通用方法启动各个观察器
             this.startObserver('coreWebVitals', this.startCoreWebVitalsMonitoring.bind(this));
-            this.startObserver('resourceTiming', this.startResourceTimingMonitoring.bind(this));
+            this.startObserver('resources', this.startResourceTimingMonitoring.bind(this));
             this.startObserver('longTasks', this.startLongTasksMonitoring.bind(this));
-            this.startObserver('navigationTiming', this.startNavigationTimingMonitoring.bind(this));
+            this.startObserver('navigation', this.startNavigationMonitoring.bind(this));
             // 浏览器信息 - 默认启用，无论配置如何都启动
             this.startBrowserInfoMonitoring();
             this.isRunning = true;
@@ -2715,13 +2719,13 @@
             this.cleanupObserver(this.coreWebVitalsObserver);
             this.cleanupObserver(this.resourceTimingObserver);
             this.cleanupObserver(this.longTasksObserver);
-            this.cleanupObserver(this.navigationTimingObserver);
+            this.cleanupObserver(this.navigationObserver);
             this.cleanupObserver(this.browserInfoObserver);
             // 重置所有观察器引用
             this.coreWebVitalsObserver = null;
             this.resourceTimingObserver = null;
             this.longTasksObserver = null;
-            this.navigationTimingObserver = null;
+            this.navigationObserver = null;
             this.browserInfoObserver = null;
             this.isRunning = false;
             logger.debug('所有性能监控模块已停止');
@@ -2798,9 +2802,9 @@
                     isRunning: this.isRunning,
                     activeObservers: {
                         coreWebVitals: !!this.coreWebVitalsObserver,
-                        resourceTiming: !!this.resourceTimingObserver,
+                        resources: !!this.resourceTimingObserver,
                         longTasks: !!this.longTasksObserver,
-                        navigationTiming: !!this.navigationTimingObserver,
+                        navigation: !!this.navigationObserver,
                         browserInfo: !!this.browserInfoObserver
                     }
                 });
@@ -2853,7 +2857,7 @@
                     logger.warn('当前浏览器不支持资源计时监控');
                     return;
                 }
-                const options = this.options.resourceTiming;
+                const options = this.options.resources;
                 this.resourceTimingObserver = new ResourceTimingObserver((resources) => {
                     this.notifyMetricsUpdate(exports.MetricType.RESOURCES, resources);
                     this.metrics.resources.push(...resources);
@@ -2897,14 +2901,14 @@
         /**
          * 开始监控导航计时
          */
-        startNavigationTimingMonitoring() {
+        startNavigationMonitoring() {
             try {
                 if (!browserSupport.supportsEntryType('navigation')) {
                     logger.warn('当前浏览器不支持导航计时监控');
                     return;
                 }
-                const options = this.options.navigationTiming;
-                this.navigationTimingObserver = new NavigationTimingObserver({
+                const options = this.options.navigation;
+                this.navigationObserver = new NavigationObserver({
                     onUpdate: (navigationMetrics) => {
                         this.metrics.navigation = navigationMetrics;
                         this.notifyMetricsUpdate(exports.MetricType.NAVIGATION, navigationMetrics);
@@ -2912,7 +2916,7 @@
                     enabled: options.enabled,
                     includeRawTiming: options.includeRawTiming
                 });
-                this.navigationTimingObserver.start();
+                this.navigationObserver.start();
                 logger.debug('导航计时监控已启动');
             }
             catch (error) {
@@ -2969,9 +2973,9 @@
             const details = {
                 performanceAPI: browserSupport.hasPerformanceAPI(),
                 performanceObserver: browserSupport.hasPerformanceObserver(),
-                navigationTiming: browserSupport.supportsEntryType('navigation'),
+                navigation: browserSupport.supportsEntryType('navigation'),
                 longtask: browserSupport.supportsEntryType('longtask'),
-                resourceTiming: browserSupport.supportsEntryType('resource'),
+                resources: browserSupport.supportsEntryType('resource'),
                 paint: browserSupport.supportsEntryType('paint'),
                 largestContentfulPaint: browserSupport.supportsEntryType('largest-contentful-paint'),
                 firstInput: browserSupport.supportsEntryType('first-input'),
@@ -2980,6 +2984,18 @@
             // 基本支持需要Performance API和PerformanceObserver
             const supported = details.performanceAPI && details.performanceObserver;
             return { supported, details };
+        }
+        getStatus() {
+            return {
+                isRunning: this.isRunning,
+                metrics: {
+                    coreWebVitals: !!this.coreWebVitalsObserver,
+                    resources: !!this.resourceTimingObserver,
+                    longTasks: !!this.longTasksObserver,
+                    navigation: !!this.navigationObserver,
+                    browserInfo: !!this.browserInfoObserver
+                }
+            };
         }
     }
 

@@ -61,7 +61,7 @@ export interface CoreWebVitalsOptions {
 /**
  * 资源计时观察者选项
  */
-export interface ResourceTimingOptions {
+export interface ResourceOptions {
   /** 是否启用 */
   enabled?: boolean;
   
@@ -76,6 +76,9 @@ export interface ResourceTimingOptions {
   
   /** 最大保存的资源数量 */
   maxResources?: number;
+  
+  /** 是否捕获网络信息 */
+  captureNetworkInfo?: boolean;
 }
 
 /**
@@ -98,7 +101,7 @@ export interface LongTasksOptions {
 /**
  * 导航计时观察者选项
  */
-export interface NavigationTimingOptions {
+export interface NavigationOptions {
   /** 是否启用 */
   enabled?: boolean;
   
@@ -147,13 +150,13 @@ export interface PerfObserverOptions extends GlobalOptions {
   coreWebVitals?: boolean | CoreWebVitalsOptions;
   
   /** 资源计时配置 */
-  resourceTiming?: boolean | ResourceTimingOptions;
+  resources?: boolean | ResourceOptions;
   
   /** 长任务监控配置 */
   longTasks?: boolean | LongTasksOptions;
   
   /** 导航计时配置 */
-  navigationTiming?: boolean | NavigationTimingOptions;
+  navigation?: boolean | NavigationOptions;
   
   /** 浏览器信息配置 */
   browserInfo?: boolean | BrowserInfoOptions;

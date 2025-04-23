@@ -1,14 +1,14 @@
-import { calculateTime } from '../utils/time';
-import { NetworkMetricsCollector } from '../utils/network-metrics';
 import { logger } from '../utils/logger';
+import { NetworkMetricsCollector } from '../utils/network-metrics';
+import { calculateTime } from '../utils/time';
 /**
  * 导航计时观察者
- * 负责监控页面导航过程中的性能指标，包括TTFB等
+ * 用于收集页面加载相关的导航计时性能指标
  */
-export class NavigationTimingObserver {
+export class NavigationObserver {
     /**
      * 创建导航计时观察者实例
-     * @param options 导航计时观察者配置
+     * @param options 配置选项
      */
     constructor(options) {
         this.metrics = {};
@@ -16,9 +16,9 @@ export class NavigationTimingObserver {
         this.hasReportedMetrics = false;
         this.onUpdate = options.onUpdate;
         this.options = {
-            enabled: true,
-            includeRawTiming: false,
-            ...options
+            enabled: options.enabled !== undefined ? options.enabled : true,
+            includeRawTiming: options.includeRawTiming || false,
+            onUpdate: options.onUpdate
         };
         logger.debug('导航计时观察者已创建，配置:', {
             enabled: this.options.enabled,
@@ -172,7 +172,7 @@ export class NavigationTimingObserver {
         // 计算所有时间指标
         const timingMetrics = this.calculateTimingMetrics(entry);
         // 获取网络信息
-        const networkInfo = NetworkMetricsCollector.getNetworkInformation();
+        const networkMetrics = NetworkMetricsCollector.getNetworkInformation();
         // 获取当前页面URL
         const pageUrl = typeof window !== 'undefined' ? window.location.href : entry.name;
         // 记录关键性能指标
@@ -187,7 +187,8 @@ export class NavigationTimingObserver {
         this.metrics = {
             ...timingMetrics, // 添加所有计算的时间指标
             url: pageUrl,
-            networkInfo,
+            metric: 'navigation',
+            networkMetrics,
             timestamp: new Date().getTime(),
             complete: true // 标记这是一个完整的导航指标
         };
