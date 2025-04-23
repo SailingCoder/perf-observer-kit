@@ -3,7 +3,7 @@
  * 针对只需要核心功能的场景
  */
 
-import { PerfObserverKit } from './perf-observer-kit';
+import { PerfObserverKit } from './core/perf-observer-kit';
 import { MetricType } from './types';
 import { logger, LogLevel } from './utils/logger';
 

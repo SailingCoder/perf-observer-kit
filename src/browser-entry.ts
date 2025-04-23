@@ -3,7 +3,7 @@
  * 这个文件是为了生成可直接在浏览器中使用的UMD模块
  */
 
-import { PerfObserverKit } from './perf-observer-kit';
+import { PerfObserverKit } from './core/perf-observer-kit';
 import { CoreWebVitalsObserver } from './metrics/core-web-vitals';
 import { MetricType } from './types';
 import { logger, LogLevel } from './utils/logger';

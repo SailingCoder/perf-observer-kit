@@ -13,16 +13,16 @@ import {
   MetricType,
   ResourceOptions,
   MetricPayload
-} from './types';
-import { browserSupport } from './utils';
-import { logger, LogLevel } from './utils/logger';
+} from '../types';
+import { browserSupport } from '../utils';
+import { logger, LogLevel } from '../utils/logger';
 
 // 导入各个监视器
-import { CoreWebVitalsObserver } from './metrics/core-web-vitals';
-import { ResourceTimingObserver } from './metrics/resource-timing';
-import { LongTasksObserver } from './metrics/long-tasks';
-import { NavigationObserver } from './metrics/navigation-timing';
-import { BrowserInfoObserver } from './metrics/browser-observer';
+import { CoreWebVitalsObserver } from '../metrics/core-web-vitals';
+import { ResourceTimingObserver } from '../metrics/resource-timing';
+import { LongTasksObserver } from '../metrics/long-tasks';
+import { NavigationObserver } from '../metrics/navigation-timing';
+import { BrowserInfoObserver } from '../metrics/browser-observer';
 
 // 从package.json获取版本号 - 这个值会在构建时被rollup插件替换
 // 使用字符串形式，避免TypeScript编译错误

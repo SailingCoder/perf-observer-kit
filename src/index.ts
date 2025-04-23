@@ -1,4 +1,4 @@
-import { PerfObserverKit } from './perf-observer-kit';
+import { PerfObserverKit } from './core/perf-observer-kit';
 import {
   PerfObserverOptions,
   MetricData,
