@@ -142,7 +142,7 @@ export class ResourceTimingObserver {
     const networkMetrics = NetworkMetricsCollector.getNetworkInformation();
     
     return {
-      name: resourceEntry.name,
+      url: resourceEntry.name,
       initiatorType: resourceEntry.initiatorType,
       startTime: resourceEntry.startTime,
       duration: resourceEntry.duration,

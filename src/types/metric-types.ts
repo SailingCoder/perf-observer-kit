@@ -62,7 +62,7 @@ export interface CoreWebVitalsMetrics {
  * 资源加载指标数据
  */
 export interface ResourceMetrics {
-  name: string; // 资源URL地址
+  url: string; // 资源URL地址
   initiatorType: string; // 资源发起者类型
   startTime: number; // 资源开始时间
   duration: number; // 资源加载时间
