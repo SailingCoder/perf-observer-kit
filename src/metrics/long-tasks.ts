@@ -67,7 +67,8 @@ export class LongTasksObserver {
             duration: entry.duration,
             startTime: entry.startTime,
             attribution,
-            timestamp: new Date().getTime()
+            timestamp: new Date().getTime(),
+            metric: 'longTasks'
           };
           
           this.longTasks.push(longTask);
