@@ -98,7 +98,10 @@ export class CLSObserver extends BaseObserver {
         const entries = entryList.getEntries();
         
         // 只处理页面在可见状态时发生的布局偏移
-        if (document.visibilityState !== 'visible') return;
+        if (document.visibilityState !== 'visible') {
+          logger.debug('页面不可见，忽略布局偏移事件');
+          return;
+        }
         
         for (const entry of entries) {
           // 只计算用户未操作时的布局偏移
@@ -120,6 +123,7 @@ export class CLSObserver extends BaseObserver {
       });
       
       this.clsObserver.observe({ type: 'layout-shift', buffered: true });
+      logger.debug('CLS观察者已启动，开始监控布局偏移');
     } catch (error) {
       logger.error('CLS监控不受支持', error);
     }
