@@ -38,7 +38,7 @@ const perfMonitor = new PerfObserverKit({
     // Send metrics to your analytics platform
   },
   // Enable all monitoring modules
-  coreWebVitals: true,
+  coreWebVitals: true, // default FCP LCP
   resourceTiming: true,
   longTasks: true,
   navigationTiming: true
@@ -227,6 +227,15 @@ console.log(metrics.longTasks);          // Array of long tasks
 // Navigation timing
 console.log(metrics.navigation.ttfb);    // Time to First Byte
 ```
+
+**CLS Metrics Context Properties:**
+```javascript
+// Additional context available for CLS metrics
+console.log(metrics.coreWebVitals.cls.context.sessionValues);  // All session values
+console.log(metrics.coreWebVitals.cls.context.shiftCount);     // Number of layout shifts
+console.log(metrics.coreWebVitals.cls.context.sessionCount);   // Number of sessions
+console.log(metrics.coreWebVitals.cls.context.isPageVisible);  // Page visibility state
+```
 </details>
 
 <details>
@@ -296,6 +305,14 @@ Don't use the non-browser build in direct browser code:
 <!-- ❌ DON'T use this in browser environments -->
 <script src="https://unpkg.com/perf-observer-kit@latest/dist/index.js"></script>
 ```
+
+### Page Visibility and CLS
+
+If your CLS values seem inconsistent, be aware that:
+- CLS is only measured when the page is visible
+- When a page goes to background, CLS collection pauses
+- When a page becomes visible again, a new CLS session will start
+- CLS uses a session window model, taking the largest session value as the final score
 
 ### Browser Compatibility
 

@@ -32,8 +32,8 @@ export class CoreWebVitalsObserver {
       enabled: options.enabled !== undefined ? options.enabled : false,
       
       // 所有指标默认都不启用，必须显式配置启用
-      fcp: options.fcp !== undefined ? options.fcp : false,
-      lcp: options.lcp !== undefined ? options.lcp : false,
+      fcp: options.fcp !== undefined ? options.fcp : true,
+      lcp: options.lcp !== undefined ? options.lcp : true,
       fid: options.fid !== undefined ? options.fid : false,
       cls: options.cls !== undefined ? options.cls : false,
       inp: options.inp !== undefined ? options.inp : false,

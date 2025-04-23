@@ -38,7 +38,7 @@ const perfMonitor = new PerfObserverKit({
     // 将指标发送到您的分析平台
   },
   // 启用所有监控模块
-  coreWebVitals: true,
+  coreWebVitals: true, // default FCP LCP
   resourceTiming: true,
   longTasks: true,
   navigationTiming: true
@@ -226,6 +226,15 @@ console.log(metrics.longTasks);          // 长任务数组
 // 导航计时
 console.log(metrics.navigation.ttfb);    // 首字节时间
 ```
+
+**CLS 指标上下文属性:**
+```javascript
+// CLS 指标的额外上下文信息
+console.log(metrics.coreWebVitals.cls.context.sessionValues);  // 所有会话值
+console.log(metrics.coreWebVitals.cls.context.shiftCount);     // 布局偏移次数
+console.log(metrics.coreWebVitals.cls.context.sessionCount);   // 会话数量
+console.log(metrics.coreWebVitals.cls.context.isPageVisible);  // 页面可见性状态
+```
 </details>
 
 <details>
@@ -295,6 +304,14 @@ perfMonitor.clearMetrics();
 <!-- ❌ 不要在浏览器环境中使用这个 -->
 <script src="https://unpkg.com/perf-observer-kit@latest/dist/index.js"></script>
 ```
+
+### 页面可见性与 CLS
+
+如果您的 CLS 值看起来不一致，请注意以下几点：
+- CLS 只在页面可见时测量
+- 当页面转到后台时，CLS 收集会暂停
+- 当页面重新变为可见时，会开始一个新的 CLS 会话
+- CLS 使用会话窗口模型，以最大的会话值作为最终分数
 
 ### 浏览器兼容性
 
