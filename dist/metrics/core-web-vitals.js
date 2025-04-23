@@ -16,10 +16,10 @@ export class CoreWebVitalsObserver {
         this.onUpdate = options.onUpdate;
         this.options = {
             // 默认启用
-            enabled: options.enabled !== undefined ? options.enabled : true,
+            enabled: options.enabled !== undefined ? options.enabled : false,
             // FCP和LCP默认启用，其他指标默认不启用
-            fcp: options.fcp !== undefined ? options.fcp : true,
-            lcp: options.lcp !== undefined ? options.lcp : true,
+            fcp: options.fcp !== undefined ? options.fcp : false,
+            lcp: options.lcp !== undefined ? options.lcp : false,
             fid: options.fid !== undefined ? options.fid : false,
             cls: options.cls !== undefined ? options.cls : false,
             inp: options.inp !== undefined ? options.inp : false,

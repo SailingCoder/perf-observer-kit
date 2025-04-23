@@ -1467,10 +1467,10 @@
             this.onUpdate = options.onUpdate;
             this.options = {
                 // 默认启用
-                enabled: options.enabled !== undefined ? options.enabled : true,
+                enabled: options.enabled !== undefined ? options.enabled : false,
                 // FCP和LCP默认启用，其他指标默认不启用
-                fcp: options.fcp !== undefined ? options.fcp : true,
-                lcp: options.lcp !== undefined ? options.lcp : true,
+                fcp: options.fcp !== undefined ? options.fcp : false,
+                lcp: options.lcp !== undefined ? options.lcp : false,
                 fid: options.fid !== undefined ? options.fid : false,
                 cls: options.cls !== undefined ? options.cls : false,
                 inp: options.inp !== undefined ? options.inp : false,
@@ -2639,9 +2639,9 @@
                         enabled: true,
                         fcp: true,
                         lcp: true,
-                        fid: true,
-                        cls: true,
-                        inp: true,
+                        fid: false,
+                        cls: false,
+                        inp: false,
                         maxLongTasks: 50,
                         maxResources: 100
                     };
@@ -2649,8 +2649,8 @@
                 // 处理配置选项，设置默认值
                 return {
                     ...normalizedOptions,
-                    fcp: normalizedOptions.fcp !== undefined ? normalizedOptions.fcp : true,
-                    lcp: normalizedOptions.lcp !== undefined ? normalizedOptions.lcp : true,
+                    fcp: normalizedOptions.fcp !== undefined ? normalizedOptions.fcp : false,
+                    lcp: normalizedOptions.lcp !== undefined ? normalizedOptions.lcp : false,
                     fid: normalizedOptions.fid !== undefined ? normalizedOptions.fid : false,
                     cls: normalizedOptions.cls !== undefined ? normalizedOptions.cls : false,
                     inp: normalizedOptions.inp !== undefined ? normalizedOptions.inp : false,

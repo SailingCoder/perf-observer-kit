@@ -244,9 +244,9 @@ export class PerfObserverKit {
           enabled: true,
           fcp: true,
           lcp: true,
-          fid: true,
-          cls: true,
-          inp: true,
+          fid: false,
+          cls: false,
+          inp: false,
           maxLongTasks: 50,
           maxResources: 100
         };
@@ -255,8 +255,8 @@ export class PerfObserverKit {
       // 处理配置选项，设置默认值
       return {
         ...normalizedOptions,
-        fcp: normalizedOptions.fcp !== undefined ? normalizedOptions.fcp : true,
-        lcp: normalizedOptions.lcp !== undefined ? normalizedOptions.lcp : true,
+        fcp: normalizedOptions.fcp !== undefined ? normalizedOptions.fcp : false,
+        lcp: normalizedOptions.lcp !== undefined ? normalizedOptions.lcp : false,
         fid: normalizedOptions.fid !== undefined ? normalizedOptions.fid : false,
         cls: normalizedOptions.cls !== undefined ? normalizedOptions.cls : false,
         inp: normalizedOptions.inp !== undefined ? normalizedOptions.inp : false,
