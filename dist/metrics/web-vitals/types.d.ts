@@ -105,11 +105,6 @@ export interface NavigationTimingObserverOptions {
      */
     includeRawTiming?: boolean;
     /**
-     * 是否只收集最后一次完整的导航计时数据并断开监听
-     * 默认为true，收集完最终导航计时数据后自动断开观察者
-     */
-    collectOnce?: boolean;
-    /**
      * 最大等待时间（毫秒）
      * 在这段时间后，如果仍未收集到完整数据，将强制上报当前已收集的数据
      * 默认为10000ms

@@ -2863,3 +2863,11 @@ if (typeof window !== 'undefined') {
 
 export { MetricType, PerfObserverKit };
 //# sourceMappingURL=index.js.map
+PerfObserverKit = {
+        PerfObserverKit,
+        MetricType: exports.MetricType
+    };
+}
+
+exports.PerfObserverKit = PerfObserverKit;
+//# sourceMappingURL=index.js.map

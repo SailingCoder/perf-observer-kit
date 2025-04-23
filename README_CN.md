@@ -145,7 +145,6 @@ const perfObserver = new PerfObserverKit({
   navigationTiming: {
     enabled: true,
     includeRawTiming: false, // 是否包含原始导航计时数据
-    collectOnce: true, // 是否只收集一次导航计时数据并断开监听（默认为true）
     onUpdate: (metrics) => {
       console.log('导航计时指标:', metrics);
       // 包含 domainLookupTime, tcpConnectTime, ttfb, responseTime, domParse, domContentLoaded, loadEvent 等
@@ -154,6 +153,9 @@ const perfObserver = new PerfObserverKit({
 });
 ```
 
+> **实现细节**: 该库使用 `window.addEventListener('load')` 来收集导航事件，并确保指标仅在 loadEventEnd 可用时才报告，从而确保您获得准确的 loadEventDuration 值。导航计时数据在每次页面加载时只会收集一次。
+
+有关所有导航计时指标的详细信息，请参阅[导航计时文档](./docs/navigation-timing.md)。
 </details>
 
 <details>
