@@ -97,47 +97,6 @@ export class NavigationObserver {
   }
   
   /**
-   * 创建带评级的指标数据
-   * @param name 指标名称 
-   * @param value 指标值
-   * @param timestamp 时间戳
-   * @param thresholds 评级阈值 [good, needs-improvement]
-   * @returns 格式化的指标数据对象
-   */
-  private createMetric(
-    name: string,
-    value: number | undefined,
-    timestamp: number,
-    thresholds?: [number, number]
-  ): MetricData {
-    // 确保值为数字且非负
-    const safeValue = typeof value === 'number' ? Math.max(0, value) : 0;
-    
-    const metric: MetricData = {
-      name,
-      value: safeValue,
-      unit: 'ms',
-      timestamp
-    };
-    
-    // 如果提供了阈值，添加评级
-    if (thresholds && (thresholds[0] > 0 || thresholds[1] > 0)) {
-      if (safeValue <= thresholds[0]) {
-        metric.rating = 'good';
-      } else if (safeValue <= thresholds[1]) {
-        metric.rating = 'needs-improvement';
-      } else {
-        metric.rating = 'poor';
-      }
-    }
-    
-    // 添加网络上下文信息
-    metric.context = NetworkMetricsCollector.getNetworkContext();
-    
-    return metric;
-  }
-  
-  /**
    * 计算所有导航时间指标
    * @param entry 导航性能条目
    * @returns 计算后的时间指标
