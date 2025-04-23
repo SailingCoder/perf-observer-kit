@@ -90,6 +90,8 @@ const perfMonitor = new PerfObserverKit({
 - INP: 良好 ≤ 200毫秒, 差 > 500毫秒
 
 [了解更多关于核心网页指标](https://web.dev/vitals/)
+
+有关CLS实现和优化策略的详细信息，请参阅[累积布局偏移文档](./docs/cls-metrics-CN.md)。
 </details>
 
 <details>

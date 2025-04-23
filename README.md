@@ -90,6 +90,8 @@ const perfMonitor = new PerfObserverKit({
 - INP: Good ≤ 200ms, Poor > 500ms
 
 [Learn more about Core Web Vitals](https://web.dev/vitals/)
+
+For detailed information on CLS implementation and strategies, see the [Cumulative Layout Shift Documentation](./docs/cls-metrics.md).
 </details>
 
 <details>

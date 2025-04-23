@@ -19,15 +19,22 @@ export class CLSObserver extends BaseObserver {
   private firstHiddenTime: number;
   
   // 会话窗口相关属性
-  private sessionEntries: PerformanceEntry[] = [];
+  private sessionCount: number = 0;   // 当前会话中的偏移数量
   private sessionValues: number[] = [0]; // 各个会话窗口的CLS值
-  private sessionGap: number = 1000; // 会话间隔时间，单位毫秒
-  private sessionMax: number = 5;    // 最大会话窗口数量
+  private sessionGap: number = 1000;  // 会话间隔时间，单位毫秒
+  private sessionMax: number = 5;     // 最大会话窗口数量
+  private maxSessionEntries: number = 100; // 每个会话记录的最大偏移数量
   
   // 上次报告的CLS值
   private prevReportedValue: number = 0;
   // 上次偏移的时间戳
   private lastEntryTime: number = 0;
+  // 是否需要在页面重新可见时重置会话
+  private shouldResetOnNextVisible: boolean = false;
+  // 防抖计时器
+  private reportDebounceTimer: number | null = null;
+  // 防抖延迟
+  private reportDebounceDelay: number = 500;
   
   constructor(options: ObserverOptions) {
     super(options);
@@ -103,25 +110,47 @@ export class CLSObserver extends BaseObserver {
           return;
         }
         
+        // 处理新会话的标志
+        let newSessionStarted = false;
+        
         for (const entry of entries) {
           // 只计算用户未操作时的布局偏移
           const layoutShift = entry as LayoutShift;
           if (!layoutShift.hadRecentInput && layoutShift.startTime < this.firstHiddenTime) {
-            // 更新会话窗口
-            this.updateSessionWindows(layoutShift);
+            // 获取偏移发生的时间戳
+            const currentTime = layoutShift.startTime;
             
-            // 计算最终CLS值
-            const clsValue = this.calculateCLS();
-            
-            // 只有当CLS值显著变化时才报告
-            if (clsValue > this.prevReportedValue + 0.01 || clsValue < this.prevReportedValue - 0.01) {
-              this.reportCLS(clsValue);
-              this.prevReportedValue = clsValue;
+            // 判断是否需要开始新会话
+            if (this.shouldResetOnNextVisible || currentTime - this.lastEntryTime > this.sessionGap) {
+              this.startNewSession(layoutShift.value);
+              newSessionStarted = true;
+              this.shouldResetOnNextVisible = false;
+            } else {
+              // 累加到当前会话，但限制记录的事件数量
+              if (this.sessionCount < this.maxSessionEntries) {
+                this.sessionCount++;
+                
+                // 累加到当前会话
+                const currentSessionIndex = this.sessionValues.length - 1;
+                this.sessionValues[currentSessionIndex] += layoutShift.value;
+              }
             }
+            
+            // 更新最后一次偏移时间
+            this.lastEntryTime = currentTime;
+            
+            // 防抖处理，减少频繁报告
+            this.debouncedReportCLS();
           }
+        }
+        
+        // 如果开始了新会话，立即报告一次，不需要防抖
+        if (newSessionStarted) {
+          this.reportCLS(this.calculateCLS());
         }
       });
       
+      // 使用buffered选项确保不会丢失之前的布局偏移
       this.clsObserver.observe({ type: 'layout-shift', buffered: true });
       logger.debug('CLS观察者已启动，开始监控布局偏移');
     } catch (error) {
@@ -130,44 +159,54 @@ export class CLSObserver extends BaseObserver {
   }
   
   /**
-   * 更新CLS会话窗口
-   * 使用Google推荐的会话窗口方法
-   * @see https://web.dev/articles/evolving-cls
+   * 开始新的会话窗口
+   * @param initialValue 初始偏移值
    */
-  private updateSessionWindows(layoutShift: LayoutShift): void {
-    const currentTime = layoutShift.startTime;
+  private startNewSession(initialValue: number): void {
+    // 添加新会话
+    this.sessionValues.push(initialValue);
+    this.sessionCount = 1;
     
-    // 如果是新会话
-    if (currentTime - this.lastEntryTime > this.sessionGap) {
-      // 添加新会话
-      this.sessionValues.push(layoutShift.value);
-      this.sessionEntries = [layoutShift];
+    // 如果会话窗口超过限制，移除最小的会话
+    if (this.sessionValues.length > this.sessionMax) {
+      // 找到最小的会话值及其索引
+      let minValue = Infinity;
+      let minIndex = 0;
       
-      // 如果会话窗口超过限制，移除最小的会话
-      if (this.sessionValues.length > this.sessionMax) {
-        // 找到最小的会话值及其索引
-        let minValue = Infinity;
-        let minIndex = 0;
-        
-        for (let i = 0; i < this.sessionValues.length; i++) {
-          if (this.sessionValues[i] < minValue) {
-            minValue = this.sessionValues[i];
-            minIndex = i;
-          }
+      for (let i = 0; i < this.sessionValues.length; i++) {
+        if (this.sessionValues[i] < minValue) {
+          minValue = this.sessionValues[i];
+          minIndex = i;
         }
-        
-        // 移除最小的会话
-        this.sessionValues.splice(minIndex, 1);
       }
-    } else {
-      // 累加到当前会话
-      const currentSessionIndex = this.sessionValues.length - 1;
-      this.sessionValues[currentSessionIndex] += layoutShift.value;
-      this.sessionEntries.push(layoutShift);
+      
+      // 移除最小的会话
+      this.sessionValues.splice(minIndex, 1);
     }
     
-    // 更新最后一次偏移时间
-    this.lastEntryTime = currentTime;
+    logger.debug(`开始新的CLS会话，当前会话数: ${this.sessionValues.length}`);
+  }
+  
+  /**
+   * 防抖报告CLS，减少频繁更新
+   */
+  private debouncedReportCLS(): void {
+    // 清除现有计时器
+    if (this.reportDebounceTimer !== null) {
+      window.clearTimeout(this.reportDebounceTimer);
+    }
+    
+    // 设置新计时器
+    this.reportDebounceTimer = window.setTimeout(() => {
+      const clsValue = this.calculateCLS();
+      
+      // 只有当CLS值显著变化时才报告
+      if (Math.abs(clsValue - this.prevReportedValue) >= 0.01) {
+        this.reportCLS(clsValue);
+      }
+      
+      this.reportDebounceTimer = null;
+    }, this.reportDebounceDelay);
   }
   
   /**
@@ -190,9 +229,11 @@ export class CLSObserver extends BaseObserver {
       url: typeof window !== 'undefined' ? window.location.href : undefined,
       // 添加网络信息和其他上下文
       context: {
-        shiftCount: this.sessionEntries.length,
+        shiftCount: this.sessionCount,
+        sessionCount: this.sessionValues.length,
         sessionValues: [...this.sessionValues],
         largestSession: this.calculateCLS(),
+        isPageVisible: document.visibilityState === 'visible',
         firstHiddenTime: this.firstHiddenTime === Infinity ? null : this.firstHiddenTime
       }
     };
@@ -200,14 +241,23 @@ export class CLSObserver extends BaseObserver {
     // 设置评级
     cls.rating = this.assignCLSRating(cls.value);
     
-    logger.debug(`报告CLS值: ${cls.value}，评级: ${cls.rating}`);
+    logger.debug(`报告CLS值: ${cls.value}，评级: ${cls.rating}，页面可见性: ${document.visibilityState}`);
     this.onUpdate(cls);
+    
+    // 更新上次报告的值
+    this.prevReportedValue = clsValue;
   }
   
   /**
    * 停止CLS观察
    */
   public stop(): void {
+    // 清除防抖计时器
+    if (this.reportDebounceTimer !== null) {
+      window.clearTimeout(this.reportDebounceTimer);
+      this.reportDebounceTimer = null;
+    }
+    
     if (this.clsObserver) {
       this.clsObserver.disconnect();
       this.clsObserver = null;
@@ -221,15 +271,24 @@ export class CLSObserver extends BaseObserver {
    * @param isVisible 页面是否可见
    */
   protected onVisibilityChange(isVisible: boolean): void {
-    // 更新firstHiddenTime
-    if (!isVisible && this.firstHiddenTime === Infinity) {
-      this.firstHiddenTime = performance.now();
-      logger.debug(`页面隐藏，更新firstHiddenTime: ${this.firstHiddenTime}ms`);
+    if (!isVisible) {
+      // 页面隐藏时，报告当前的CLS值
+      if (this.firstHiddenTime === Infinity) {
+        this.firstHiddenTime = performance.now();
+        logger.debug(`页面隐藏，更新firstHiddenTime: ${this.firstHiddenTime}ms`);
+      }
       
-      // 当页面隐藏时，报告当前的CLS值
       const clsValue = this.calculateCLS();
-      if (clsValue > 0) {
-        this.reportCLS(clsValue);
+      // 无论大小变化，都在页面隐藏时报告一次
+      this.reportCLS(clsValue);
+      
+      // 标记需要在页面重新可见时开始新会话
+      this.shouldResetOnNextVisible = true;
+    } else {
+      // 页面重新变为可见
+      if (this.shouldResetOnNextVisible) {
+        logger.debug('页面重新可见，准备开始新的CLS会话');
+        // 实际的重置会在下一个布局偏移发生时生效
       }
     }
   }
@@ -241,9 +300,15 @@ export class CLSObserver extends BaseObserver {
   protected onBFCacheRestore(event: PageTransitionEvent): void {
     // 重置CLS会话值
     this.sessionValues = [0];
-    this.sessionEntries = [];
+    this.sessionCount = 0;
     this.prevReportedValue = 0;
     this.lastEntryTime = 0;
+    
+    // 清除计时器
+    if (this.reportDebounceTimer !== null) {
+      window.clearTimeout(this.reportDebounceTimer);
+      this.reportDebounceTimer = null;
+    }
     
     // 重置firstHiddenTime
     this.firstHiddenTime = this.initFirstHiddenTime();
@@ -253,10 +318,7 @@ export class CLSObserver extends BaseObserver {
     
     // 重新开始CLS监测
     if (this.clsObserver) {
-      this.clsObserver.disconnect();
-      this.clsObserver = null;
+      this.clsObserver.observe({ type: 'layout-shift', buffered: true });
     }
-    
-    this.observe();
   }
 } 
