@@ -8,7 +8,8 @@ import {
   NavigationMetrics,
   BrowserInfo,
   PerformanceMetrics,
-  MetricType
+  MetricType,
+  MetricPayload
 } from './types';
 
 // 导出所有类型
@@ -22,7 +23,8 @@ export {
   NavigationMetrics,
   BrowserInfo,
   PerformanceMetrics,
-  MetricType
+  MetricType,
+  MetricPayload
 };
 
 // 为浏览器环境添加全局对象

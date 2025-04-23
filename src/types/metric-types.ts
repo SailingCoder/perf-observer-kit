@@ -13,6 +13,17 @@ export enum MetricType {
 }
 
 /**
+ * 统一的指标数据类型
+ * 根据不同的指标类型对应不同的数据结构
+ */
+export type MetricPayload = 
+  | CoreWebVitalsMetrics    // 对应 MetricType.WEB_VITALS
+  | ResourceMetrics[]       // 对应 MetricType.RESOURCES
+  | LongTaskMetrics[]       // 对应 MetricType.LONG_TASKS
+  | NavigationMetrics       // 对应 MetricType.NAVIGATION
+  | BrowserInfo;            // 对应 MetricType.BROWSER_INFO
+
+/**
  * 基础性能指标数据
  */
 export interface MetricData {

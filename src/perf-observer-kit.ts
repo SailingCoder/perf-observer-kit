@@ -11,7 +11,8 @@ import {
   BrowserInfoOptions,
   BrowserInfo,
   MetricType,
-  ResourceOptions
+  ResourceOptions,
+  MetricPayload
 } from './types';
 import { browserSupport } from './utils';
 import { logger, LogLevel } from './utils/logger';
@@ -32,7 +33,7 @@ const VERSION = '__VERSION__';
  */
 export class PerfObserverKit {
   private options: {
-    onMetrics: ((type: MetricType, metrics: CoreWebVitalsMetrics | ResourceMetrics[] | LongTaskMetrics[] | NavigationMetrics | BrowserInfo) => void) | null;
+    onMetrics: ((type: MetricType, metrics: MetricPayload) => void) | null;
     debug: boolean;
     logLevel: LogLevel;
     autoStart: boolean;
@@ -600,7 +601,7 @@ export class PerfObserverKit {
   /**
    * 通知指标更新给回调函数
    */
-  private notifyMetricsUpdate(type: MetricType, metrics: CoreWebVitalsMetrics | ResourceMetrics[] | LongTaskMetrics[] | NavigationMetrics | BrowserInfo): void {
+  private notifyMetricsUpdate(type: MetricType, metrics: MetricPayload): void {
     try {
       if (this.options.onMetrics) {
         // 调用回调函数

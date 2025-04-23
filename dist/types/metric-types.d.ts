@@ -10,6 +10,11 @@ export declare enum MetricType {
     BROWSER_INFO = "browserInfo"
 }
 /**
+ * 统一的指标数据类型
+ * 根据不同的指标类型对应不同的数据结构
+ */
+export type MetricPayload = CoreWebVitalsMetrics | ResourceMetrics[] | LongTaskMetrics[] | NavigationMetrics | BrowserInfo;
+/**
  * 基础性能指标数据
  */
 export interface MetricData {
