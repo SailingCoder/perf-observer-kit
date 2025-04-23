@@ -138,8 +138,12 @@ Detects JavaScript tasks that block the main thread for more than 50ms, providin
 ```javascript
 const perfMonitor = new PerfObserverKit({
   navigationTiming: {
-    enabled: true,           // Enable navigation timing
-    includeRawTiming: false  // Include raw performance entries
+    enabled: true,           // Enable navigation timing monitoring
+    includeRawTiming: false, // Whether to include raw navigation timing data
+    onUpdate: (metrics) => {
+      console.log('Navigation timing metrics:', metrics);
+      // Includes domainLookupTime, tcpConnectTime, ttfb, responseTime, domParse, domContentLoaded, loadEvent, etc.
+    }
   }
 });
 ```
@@ -149,6 +153,10 @@ Measures key page load metrics:
 - DOM Content Loaded
 - Load Event
 - Network connection details
+
+> **Implementation Detail**: The library uses window.addEventListener('load') to collect navigation events and guarantees that metrics are only reported when loadEventEnd is available, ensuring you get accurate loadEventDuration values. Navigation timing data is collected only once per page load.
+
+For detailed information on all navigation timing metrics, see the [Navigation Timing Documentation](./docs/navigation-timing.md).
 </details>
 
 <details>

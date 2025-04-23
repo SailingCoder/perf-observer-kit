@@ -5,10 +5,11 @@ import { NavigationTimingObserverOptions } from './web-vitals/types';
  * 负责监控页面导航过程中的性能指标，包括TTFB等
  */
 export declare class NavigationTimingObserver {
-    private observer;
     private metrics;
     private onUpdate;
     private options;
+    private started;
+    private hasReportedMetrics;
     /**
      * 创建导航计时观察者实例
      * @param options 导航计时观察者配置
@@ -27,9 +28,9 @@ export declare class NavigationTimingObserver {
      */
     getMetrics(): NavigationMetrics;
     /**
-     * 收集初始导航计时数据
+     * 收集导航计时数据
      */
-    private collectInitialNavigationTiming;
+    private collectNavigationTiming;
     /**
      * 创建带评级的指标数据
      * @param name 指标名称
@@ -39,6 +40,12 @@ export declare class NavigationTimingObserver {
      * @returns 格式化的指标数据对象
      */
     private createMetric;
+    /**
+     * 计算所有导航时间指标
+     * @param entry 导航性能条目
+     * @returns 计算后的时间指标
+     */
+    private calculateTimingMetrics;
     /**
      * 处理导航性能条目
      */

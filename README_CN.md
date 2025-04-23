@@ -133,22 +133,27 @@ const perfMonitor = new PerfObserverKit({
 </details>
 
 <details>
-<summary><b>导航计时</b></summary>
+<summary><b>导航计时监控 (Navigation Timing)</b></summary>
 
-```javascript
-const perfMonitor = new PerfObserverKit({
+导航计时监控用于测量页面加载过程中的关键时间点，如TTFB（首字节时间）、DOM加载时间等。
+
+```js
+import { PerfObserverKit } from 'perf-observer-kit';
+
+// 启用导航计时监控
+const perfObserver = new PerfObserverKit({
   navigationTiming: {
-    enabled: true,           // 启用导航计时
-    includeRawTiming: false  // 包含原始性能条目
+    enabled: true,
+    includeRawTiming: false, // 是否包含原始导航计时数据
+    collectOnce: true, // 是否只收集一次导航计时数据并断开监听（默认为true）
+    onUpdate: (metrics) => {
+      console.log('导航计时指标:', metrics);
+      // 包含 domainLookupTime, tcpConnectTime, ttfb, responseTime, domParse, domContentLoaded, loadEvent 等
+    }
   }
 });
 ```
 
-测量关键页面加载指标：
-- TTFB (首字节时间)
-- DOM Content Loaded (DOM 内容加载完成)
-- Load Event (加载事件)
-- 网络连接详情
 </details>
 
 <details>

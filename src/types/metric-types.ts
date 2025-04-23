@@ -98,6 +98,9 @@ export interface NavigationMetrics {
   sslTime?: number; // SSL/TLS握手时间
   requestTime?: number; // 请求发送时间
   responseTime?: number; // 响应接收时间
+  loadEventDuration?: number; // load事件处理时间
+  totalLoadTime?: number; // 总加载时间（从导航开始到load事件结束）
+  resourceFetchTime?: number; // 资源获取总时间
   url?: string; // 页面URL地址
   networkInfo?: {
     downlink?: number; // 下行速度 (Mbps)
@@ -107,6 +110,7 @@ export interface NavigationMetrics {
   }; // 网络信息
   timestamp?: number; // 记录时的时间戳
   rawTiming?: Record<string, any>; // 原始性能数据
+  complete?: boolean; // 是否已收集到完整的导航计时数据
 }
 
 /**

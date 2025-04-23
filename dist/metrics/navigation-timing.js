@@ -11,12 +11,13 @@ export class NavigationTimingObserver {
      * @param options 导航计时观察者配置
      */
     constructor(options) {
-        this.observer = null;
         this.metrics = {};
+        this.started = false;
+        this.hasReportedMetrics = false;
         this.onUpdate = options.onUpdate;
         this.options = {
-            enabled: options.enabled !== undefined ? options.enabled : true,
-            includeRawTiming: options.includeRawTiming !== undefined ? options.includeRawTiming : true,
+            enabled: true,
+            includeRawTiming: false,
             ...options
         };
         logger.debug('导航计时观察者已创建，配置:', {
@@ -28,37 +29,29 @@ export class NavigationTimingObserver {
      * 开始监控导航计时性能
      */
     start() {
-        logger.info('开始监控导航计时性能');
-        // First try to get the current navigation timing metrics
-        this.collectInitialNavigationTiming();
-        // Then observe future navigations
-        try {
-            this.observer = new PerformanceObserver((entryList) => {
-                const entries = entryList.getEntries();
-                if (entries.length > 0) {
-                    // Use the most recent navigation entry
-                    const navigationEntry = entries[entries.length - 1];
-                    logger.debug('收到新的导航计时条目:', navigationEntry.name);
-                    this.processNavigationEntry(navigationEntry);
-                }
+        if (!this.options.enabled || this.started || this.hasReportedMetrics) {
+            return;
+        }
+        this.started = true;
+        // 如果页面已经加载完成，直接获取性能指标
+        if (document.readyState === 'complete') {
+            this.collectNavigationTiming();
+        }
+        else {
+            // 页面加载完成后获取性能指标
+            window.addEventListener('load', () => {
+                // 延迟一点采集，确保数据完整
+                setTimeout(() => this.collectNavigationTiming(), 100);
             });
-            this.observer.observe({ type: 'navigation', buffered: true });
-            logger.debug('导航计时观察者已启动');
         }
-        catch (error) {
-            logger.error('导航计时观察不受支持:', error);
-        }
+        logger.debug('导航计时观察者已启动');
     }
     /**
      * 停止监控导航计时性能
      */
     stop() {
         logger.info('停止导航计时性能监控');
-        if (this.observer) {
-            this.observer.disconnect();
-            this.observer = null;
-            logger.debug('导航计时观察者已断开连接');
-        }
+        this.started = false;
     }
     /**
      * 获取导航计时指标
@@ -67,22 +60,26 @@ export class NavigationTimingObserver {
         return this.metrics;
     }
     /**
-     * 收集初始导航计时数据
+     * 收集导航计时数据
      */
-    collectInitialNavigationTiming() {
-        try {
-            const navigationEntries = performance.getEntriesByType('navigation');
-            if (navigationEntries.length > 0) {
-                const navigationEntry = navigationEntries[0];
-                logger.debug('收集初始导航计时数据:', navigationEntry.name);
-                this.processNavigationEntry(navigationEntry);
+    collectNavigationTiming() {
+        if ('performance' in window && 'getEntriesByType' in performance) {
+            const navEntries = performance.getEntriesByType('navigation');
+            if (navEntries && navEntries.length > 0) {
+                // 获取最后一次导航记录
+                const entry = navEntries[navEntries.length - 1];
+                this.processNavigationEntry(entry);
+                // 收集完指标后停止
+                if (this.hasReportedMetrics) {
+                    this.stop();
+                }
             }
             else {
-                logger.warn('未找到导航计时条目');
+                logger.warn('未找到导航性能条目');
             }
         }
-        catch (error) {
-            logger.error('收集初始导航计时数据时出错:', error);
+        else {
+            logger.warn('浏览器不支持Performance API或getEntriesByType方法');
         }
     }
     /**
@@ -119,49 +116,84 @@ export class NavigationTimingObserver {
         return metric;
     }
     /**
+     * 计算所有导航时间指标
+     * @param entry 导航性能条目
+     * @returns 计算后的时间指标
+     */
+    calculateTimingMetrics(entry) {
+        return {
+            // 卸载前一个页面的时间
+            unloadTime: calculateTime(entry.unloadEventEnd, entry.unloadEventStart),
+            // 重定向时间
+            redirectTime: calculateTime(entry.redirectEnd, entry.redirectStart),
+            // Service Worker时间
+            serviceWorkerTime: entry.workerStart > 0
+                ? calculateTime(entry.workerStart, entry.fetchStart)
+                : undefined,
+            // 应用缓存检查时间
+            appCacheTime: calculateTime(entry.domainLookupStart, entry.fetchStart),
+            // DNS查找时间
+            dnsTime: calculateTime(entry.domainLookupEnd, entry.domainLookupStart),
+            // TCP连接时间
+            tcpTime: calculateTime(entry.connectEnd, entry.connectStart),
+            // SSL协商时间（如果适用）
+            sslTime: entry.secureConnectionStart > 0
+                ? calculateTime(entry.connectEnd, entry.secureConnectionStart)
+                : undefined,
+            // 请求发送时间
+            requestTime: calculateTime(entry.responseStart, entry.requestStart),
+            // TTFB: 从请求开始到收到第一个字节的时间
+            ttfb: calculateTime(entry.responseStart, entry.requestStart),
+            // 资源获取总时间（包括DNS解析、TCP连接、请求发送和接收第一个字节）
+            resourceFetchTime: calculateTime(entry.responseStart, entry.fetchStart),
+            // 响应时间: 从收到第一个字节到完全接收响应的时间
+            responseTime: calculateTime(entry.responseEnd, entry.responseStart),
+            // DOM初始化时间
+            initDOMTime: calculateTime(entry.domInteractive, entry.responseEnd),
+            // DOM处理时间
+            processingTime: calculateTime(entry.domComplete, entry.domInteractive),
+            // 内容加载时间
+            contentLoadTime: calculateTime(entry.domContentLoadedEventEnd, entry.domContentLoadedEventStart),
+            // DOM内容加载完成时间（从导航开始）
+            domContentLoaded: calculateTime(entry.domContentLoadedEventEnd, entry.startTime),
+            // load事件处理时间
+            loadEventDuration: calculateTime(entry.loadEventEnd, entry.loadEventStart),
+            // 前端总渲染时间
+            frontEndTime: calculateTime(entry.loadEventEnd, entry.responseEnd),
+            // 总加载时间（从导航开始到load事件结束）
+            totalLoadTime: calculateTime(entry.loadEventEnd, entry.startTime)
+        };
+    }
+    /**
      * 处理导航性能条目
      */
     processNavigationEntry(entry) {
-        // 计算各个时间段
-        const dnsLookupTime = calculateTime(entry.domainLookupEnd, entry.domainLookupStart) || 0;
-        const tcpConnectionTime = calculateTime(entry.connectEnd, entry.connectStart) || 0;
-        const sslNegotiationTime = entry.secureConnectionStart > 0
-            ? calculateTime(entry.connectEnd, entry.secureConnectionStart) || 0
-            : 0;
-        const ttfbTime = calculateTime(entry.responseStart, entry.requestStart) || 0;
-        const requestTime = calculateTime(entry.responseStart, entry.fetchStart) || 0;
-        const responseTime = calculateTime(entry.responseEnd, entry.responseStart) || 0;
-        const domProcessingTime = calculateTime(entry.domComplete, entry.domInteractive) || 0;
-        const domContentLoadedTime = calculateTime(entry.domContentLoadedEventEnd, entry.startTime) || 0;
-        const loadTime = calculateTime(entry.loadEventEnd, entry.startTime) || 0;
-        // 记录关键性能指标
-        logger.debug('计算导航计时指标:', {
-            url: entry.name,
-            ttfb: ttfbTime.toFixed(2) + 'ms',
-            domContentLoaded: domContentLoadedTime.toFixed(2) + 'ms',
-            loadTime: loadTime.toFixed(2) + 'ms'
-        });
+        var _a, _b, _c, _d, _e, _f, _g, _h;
+        // 计算所有时间指标
+        const timingMetrics = this.calculateTimingMetrics(entry);
         // 获取网络信息
         const networkInfo = NetworkMetricsCollector.getNetworkInformation();
         // 获取当前页面URL
         const pageUrl = typeof window !== 'undefined' ? window.location.href : entry.name;
-        // 整合所有指标，直接使用数值
+        // 记录关键性能指标
+        logger.debug('计算导航计时指标:', {
+            url: entry.name,
+            ttfb: `${((_a = timingMetrics.ttfb) === null || _a === void 0 ? void 0 : _a.toFixed(2)) || 0}ms`,
+            domContentLoaded: `${((_b = timingMetrics.domContentLoaded) === null || _b === void 0 ? void 0 : _b.toFixed(2)) || 0}ms`,
+            loadEventDuration: `${((_c = timingMetrics.loadEventDuration) === null || _c === void 0 ? void 0 : _c.toFixed(2)) || 0}ms`,
+            totalLoadTime: `${((_d = timingMetrics.totalLoadTime) === null || _d === void 0 ? void 0 : _d.toFixed(2)) || 0}ms`
+        });
+        // 整合所有指标
         this.metrics = {
-            ttfb: ttfbTime,
-            domContentLoaded: domContentLoadedTime,
-            loadEvent: loadTime,
-            processingTime: domProcessingTime,
-            dnsTime: dnsLookupTime,
-            tcpTime: tcpConnectionTime,
-            sslTime: sslNegotiationTime > 0 ? sslNegotiationTime : undefined,
-            requestTime: requestTime,
-            responseTime: responseTime,
+            ...timingMetrics, // 添加所有计算的时间指标
             url: pageUrl,
             networkInfo,
-            timestamp: new Date().getTime()
+            timestamp: new Date().getTime(),
+            complete: true // 标记这是一个完整的导航指标
         };
         // 根据配置决定是否包含原始计时数据
         if (this.options.includeRawTiming) {
+            // 创建一个更高效的原始计时数据对象
             this.metrics.rawTiming = {
                 navigationStart: entry.startTime,
                 unloadEventStart: entry.unloadEventStart,
@@ -186,15 +218,16 @@ export class NavigationTimingObserver {
                 type: entry.type,
                 redirectCount: entry.redirectCount,
             };
-            logger.debug('包含原始导航计时数据');
         }
         logger.info('导航计时指标已更新:', {
             url: pageUrl.split('?')[0], // 移除查询参数以避免日志过长
-            ttfb: ttfbTime.toFixed(2) + 'ms',
-            domContentLoaded: domContentLoadedTime.toFixed(2) + 'ms',
-            load: loadTime.toFixed(2) + 'ms'
+            ttfb: `${((_e = timingMetrics.ttfb) === null || _e === void 0 ? void 0 : _e.toFixed(2)) || 0}ms`,
+            domContentLoaded: `${((_f = timingMetrics.domContentLoaded) === null || _f === void 0 ? void 0 : _f.toFixed(2)) || 0}ms`,
+            loadEventDuration: `${((_g = timingMetrics.loadEventDuration) === null || _g === void 0 ? void 0 : _g.toFixed(2)) || 0}ms`,
+            totalLoadTime: `${((_h = timingMetrics.totalLoadTime) === null || _h === void 0 ? void 0 : _h.toFixed(2)) || 0}ms`
         });
         this.onUpdate(this.metrics);
+        this.hasReportedMetrics = true;
     }
 }
 //# sourceMappingURL=navigation-timing.js.map

@@ -90,6 +90,9 @@ export interface NavigationMetrics {
     sslTime?: number;
     requestTime?: number;
     responseTime?: number;
+    loadEventDuration?: number;
+    totalLoadTime?: number;
+    resourceFetchTime?: number;
     url?: string;
     networkInfo?: {
         downlink?: number;
@@ -99,6 +102,7 @@ export interface NavigationMetrics {
     };
     timestamp?: number;
     rawTiming?: Record<string, any>;
+    complete?: boolean;
 }
 /**
  * 所有性能指标数据集合
