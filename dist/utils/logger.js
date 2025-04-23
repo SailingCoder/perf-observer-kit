@@ -23,7 +23,7 @@ export class Logger {
         var _a, _b, _c;
         this.level = (_a = options.level) !== null && _a !== void 0 ? _a : LogLevel.INFO;
         this.prefix = (_b = options.prefix) !== null && _b !== void 0 ? _b : '[PerfObserverKit]';
-        this.disableInProduction = (_c = options.disableInProduction) !== null && _c !== void 0 ? _c : true;
+        this.disableInProduction = (_c = options.disableInProduction) !== null && _c !== void 0 ? _c : false; // 默认允许在生产环境输出日志
     }
     /**
      * 设置日志级别
@@ -31,13 +31,36 @@ export class Logger {
      */
     setLevel(level) {
         this.level = level;
+        // 输出一条日志，确认级别已更改
+        console.log(`${this.prefix} 日志级别已更改为: ${LogLevel[level]} (${level})`);
+    }
+    /**
+     * 设置日志器选项
+     * @param options 要设置的选项
+     */
+    setOptions(options) {
+        if (options.level !== undefined) {
+            this.level = options.level;
+        }
+        if (options.prefix !== undefined) {
+            this.prefix = options.prefix;
+        }
+        if (options.disableInProduction !== undefined) {
+            this.disableInProduction = options.disableInProduction;
+        }
+        console.log(`${this.prefix} 日志配置已更新:`, {
+            level: LogLevel[this.level],
+            disableInProduction: this.disableInProduction,
+            isDevEnv: IS_DEV
+        });
     }
     /**
      * 输出调试日志
      * @param args 日志内容
      */
     debug(...args) {
-        if (IS_DEV && this.shouldLog(LogLevel.DEBUG)) {
+        // 移除IS_DEV条件，允许生产环境输出调试信息
+        if (this.shouldLog(LogLevel.DEBUG)) {
             console.debug(this.prefix, ...args);
         }
     }
@@ -46,7 +69,8 @@ export class Logger {
      * @param args 日志内容
      */
     info(...args) {
-        if (IS_DEV && this.shouldLog(LogLevel.INFO)) {
+        // 移除IS_DEV条件，允许生产环境输出信息
+        if (this.shouldLog(LogLevel.INFO)) {
             console.info(this.prefix, ...args);
         }
     }
@@ -76,10 +100,23 @@ export class Logger {
      * @returns 是否应该输出
      */
     shouldLog(messageLevel) {
+        // 移除自动禁用生产环境日志的功能，改为完全尊重disableInProduction设置
         if (!IS_DEV && this.disableInProduction) {
             return false;
         }
         return messageLevel <= this.level;
+    }
+    /**
+     * 获取当前日志配置
+     * @returns 当前日志配置
+     */
+    getConfiguration() {
+        return {
+            level: this.level,
+            levelName: LogLevel[this.level],
+            disableInProduction: this.disableInProduction,
+            isProduction: !IS_DEV
+        };
     }
 }
 /**

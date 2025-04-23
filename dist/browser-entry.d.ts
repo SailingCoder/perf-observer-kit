@@ -5,10 +5,13 @@
 import { PerfObserverKit } from './perf-observer-kit';
 import { CoreWebVitalsObserver } from './metrics/core-web-vitals';
 import { MetricType } from './types';
+import { logger, LogLevel } from './utils/logger';
 declare const LibraryExports: {
     PerfObserverKit: typeof PerfObserverKit;
     CoreWebVitalsObserver: typeof CoreWebVitalsObserver;
     MetricType: typeof MetricType;
+    logger: import("./utils/logger").Logger;
+    LogLevel: typeof LogLevel;
 };
-export { PerfObserverKit, CoreWebVitalsObserver, MetricType };
+export { PerfObserverKit, CoreWebVitalsObserver, MetricType, logger, LogLevel };
 export default LibraryExports;

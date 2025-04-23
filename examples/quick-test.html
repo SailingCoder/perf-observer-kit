@@ -36,6 +36,7 @@
     <button id="generate-load">生成负载</button>
     <button id="add-content">添加内容</button>
     <button id="force-layout-shift">强制布局偏移</button>
+    <button id="check-config">检查配置</button>
   </div>
   
   <div id="content-area" class="box">
@@ -67,8 +68,7 @@
       // 初始化监控实例
       const perfMonitor = new PerfObserverKit.PerfObserverKit({
         onMetrics: function(type, metrics) {
-          console.log('[' + new Date().toISOString() + '] 收集到性能指标类型:', type);
-          console.log('指标数据:', metrics);
+          console.log('[' + new Date().toISOString() + '] 收集到性能指标类型:', type, metrics);
           
           // 根据指标类型处理不同指标
           switch(type) {
@@ -87,6 +87,19 @@
               if (metrics.cls) {
                 console.log('CLS:', metrics.cls.value.toFixed(4), 
                            '(' + metrics.cls.rating + ')');
+                console.log('CLS详情:', 
+                        '会话数:', metrics.cls.context.sessionCount, 
+                        '偏移次数:', metrics.cls.context.shiftCount);
+              }
+              
+              if (metrics.fid) {
+                console.log('FID:', metrics.fid.value.toFixed(2) + 'ms', 
+                          '(' + metrics.fid.rating + ')');
+              }
+              
+              if (metrics.inp) {
+                console.log('INP:', metrics.inp.value.toFixed(2) + 'ms', 
+                          '(' + metrics.inp.rating + ')');
               }
               break;
               
@@ -105,30 +118,44 @@
               break;
           }
         },
-        debug: true,
-        disableInProduction: false,
-        logLevel: 4,
-        coreWebVitals: {
-          enabled: true,
-          fcp: true,
-          lcp: true,
-          cls: true,
-          inp: true,
-          ttfb: true,
-        },
-        resourceTiming: true,
-        longTasks: true,
-        navigationTiming: {
-          enabled: true,
-          includeRawTiming: true,
-        },
-        resourceTiming: true,
+        debug: true,           // 开启调试模式
+        logLevel: 4,           // 使用最详细的日志级别
+        coreWebVitals: true,   // 启用所有核心Web指标
+        resourceTiming: true,  // 启用资源计时
+        longTasks: true,       // 启用长任务监控
+        navigationTiming: true // 启用导航计时
       });
       
       // 启动监控
       perfMonitor.start();
       
       console.log('性能监控已启动，请查看控制台日志...');
+      
+      // 检查配置按钮
+      document.getElementById('check-config').addEventListener('click', function() {
+        console.log('检查配置...');
+        // 输出内部配置，确认所有指标已启用
+        console.log('Core Web Vitals配置:', perfMonitor.options?.coreWebVitals);
+        
+        // 显示当前收集的指标数据
+        const metrics = perfMonitor.getMetrics();
+        console.log('当前指标:', metrics);
+        
+        // 尝试触发交互事件，用于测试FID和INP
+        document.body.click();
+        
+        // 创建一个简单的模拟交互延迟
+        setTimeout(() => {
+          const start = performance.now();
+          while (performance.now() - start < 50) {
+            // 阻塞主线程
+            const arr = [];
+            for (let i = 0; i < 5000; i++) arr.push(Math.random());
+            arr.sort();
+          }
+          document.body.click();
+        }, 100);
+      });
       
       // 按钮事件处理
       document.getElementById('generate-load').addEventListener('click', function() {

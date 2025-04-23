@@ -91,7 +91,7 @@ class Logger {
         var _a, _b, _c;
         this.level = (_a = options.level) !== null && _a !== void 0 ? _a : LogLevel.INFO;
         this.prefix = (_b = options.prefix) !== null && _b !== void 0 ? _b : '[PerfObserverKit]';
-        this.disableInProduction = (_c = options.disableInProduction) !== null && _c !== void 0 ? _c : true;
+        this.disableInProduction = (_c = options.disableInProduction) !== null && _c !== void 0 ? _c : false; // 默认允许在生产环境输出日志
     }
     /**
      * 设置日志级别
@@ -99,20 +99,38 @@ class Logger {
      */
     setLevel(level) {
         this.level = level;
+        // 输出一条日志，确认级别已更改
+    }
+    /**
+     * 设置日志器选项
+     * @param options 要设置的选项
+     */
+    setOptions(options) {
+        if (options.level !== undefined) {
+            this.level = options.level;
+        }
+        if (options.prefix !== undefined) {
+            this.prefix = options.prefix;
+        }
+        if (options.disableInProduction !== undefined) {
+            this.disableInProduction = options.disableInProduction;
+        }
     }
     /**
      * 输出调试日志
      * @param args 日志内容
      */
     debug(...args) {
-        if (IS_DEV && this.shouldLog(LogLevel.DEBUG)) ;
+        // 移除IS_DEV条件，允许生产环境输出调试信息
+        if (this.shouldLog(LogLevel.DEBUG)) ;
     }
     /**
      * 输出普通信息日志
      * @param args 日志内容
      */
     info(...args) {
-        if (IS_DEV && this.shouldLog(LogLevel.INFO)) ;
+        // 移除IS_DEV条件，允许生产环境输出信息
+        if (this.shouldLog(LogLevel.INFO)) ;
     }
     /**
      * 输出警告日志
@@ -140,10 +158,23 @@ class Logger {
      * @returns 是否应该输出
      */
     shouldLog(messageLevel) {
+        // 移除自动禁用生产环境日志的功能，改为完全尊重disableInProduction设置
         if (!IS_DEV && this.disableInProduction) {
             return false;
         }
         return messageLevel <= this.level;
+    }
+    /**
+     * 获取当前日志配置
+     * @returns 当前日志配置
+     */
+    getConfiguration() {
+        return {
+            level: this.level,
+            levelName: LogLevel[this.level],
+            disableInProduction: this.disableInProduction,
+            isProduction: !IS_DEV
+        };
     }
 }
 /**
@@ -1430,7 +1461,7 @@ class CoreWebVitalsObserver {
         this.onUpdate = options.onUpdate;
         this.options = {
             // 默认不启用，必须显式配置
-            enabled: options.enabled !== undefined ? options.enabled : false,
+            enabled: options.enabled !== undefined ? options.enabled : true,
             // 所有指标默认都不启用，必须显式配置启用
             fcp: options.fcp !== undefined ? options.fcp : true,
             lcp: options.lcp !== undefined ? options.lcp : true,
@@ -2428,7 +2459,7 @@ class BrowserInfoObserver {
 
 // 从package.json获取版本号 - 这个值会在构建时被rollup插件替换
 // 使用字符串形式，避免TypeScript编译错误
-const VERSION = '0.0.2';
+const VERSION = '0.0.3-beta1';
 /**
  * 性能观察工具包 - 性能监控的主类
  */
@@ -2450,30 +2481,35 @@ class PerfObserverKit {
             browserInfo: {}
         };
         this.isRunning = false;
-        // 验证传入的选项
+        // 验证选项
         this.validateOptions(options);
-        // 设置默认选项
+        // 初始化日志级别
+        const logLevel = this.determineLogLevel(options);
+        // 构建内部选项配置
         this.options = {
-            onMetrics: typeof options.onMetrics === 'function'
-                ? options.onMetrics
-                : null,
+            // 回调函数，在指标更新时调用
+            onMetrics: options.onMetrics || null,
+            // 通用设置
             debug: options.debug || false,
-            logLevel: this.determineLogLevel(options),
-            autoStart: options.autoStart !== undefined ? options.autoStart : false,
-            samplingRate: options.samplingRate || 0, // 0表示不采样，报告所有指标
-            // 核心Web指标配置 - 默认不启用，必须显式配置
+            logLevel: logLevel,
+            autoStart: options.autoStart || false,
+            samplingRate: options.samplingRate === undefined ? 0 : options.samplingRate,
+            // 核心Web指标配置
             coreWebVitals: this.normalizeCoreWebVitalsOptions(options.coreWebVitals),
-            // 资源计时配置 - 默认不启用，必须显式配置
+            // 资源计时配置
             resourceTiming: this.normalizeResourceOptions(options.resourceTiming),
-            // 长任务监控配置 - 默认不启用，必须显式配置
+            // 长任务配置
             longTasks: this.normalizeModuleOptions(options.longTasks, false),
-            // 导航计时配置 - 默认不启用，必须显式配置
+            // 导航计时配置
             navigationTiming: this.normalizeModuleOptions(options.navigationTiming, false),
             // 浏览器信息配置 - 唯一默认启用的模块
             browserInfo: this.normalizeModuleOptions(options.browserInfo, true)
         };
-        // 初始化日志系统
-        logger.setLevel(this.options.logLevel);
+        // 初始化日志系统 - 通过显式设置选项，确保即使在生产环境也能使用调试模式
+        logger.setOptions({
+            level: this.options.logLevel,
+            disableInProduction: false // 确保生产环境中也能使用日志
+        });
         // 输出初始化日志
         logger.debug('PerfObserverKit初始化完成，配置:', this.options);
         // 检查浏览器支持
@@ -2586,6 +2622,19 @@ class PerfObserverKit {
         try {
             // 首先使用通用方法获取基础选项
             const normalizedOptions = this.normalizeModuleOptions(options, false);
+            // 如果传入的是布尔值true，启用所有指标
+            if (options === true) {
+                return {
+                    enabled: true,
+                    fcp: true,
+                    lcp: true,
+                    fid: true,
+                    cls: true,
+                    inp: true,
+                    maxLongTasks: 50,
+                    maxResources: 100
+                };
+            }
             // 处理配置选项，设置默认值
             return {
                 ...normalizedOptions,
@@ -2730,7 +2779,26 @@ class PerfObserverKit {
         if (enabled && this.options.logLevel < LogLevel.DEBUG) {
             this.setLogLevel(LogLevel.DEBUG);
         }
+        // 确保生产环境也可以看到日志
+        logger.setOptions({
+            disableInProduction: false
+        });
         logger.debug('调试模式已' + (enabled ? '启用' : '禁用'));
+        // 输出更详细的诊断信息
+        if (enabled) {
+            const config = logger.getConfiguration();
+            logger.debug('日志配置状态:', config);
+            logger.debug('当前监控状态:', {
+                isRunning: this.isRunning,
+                activeObservers: {
+                    coreWebVitals: !!this.coreWebVitalsObserver,
+                    resourceTiming: !!this.resourceTimingObserver,
+                    longTasks: !!this.longTasksObserver,
+                    navigationTiming: !!this.navigationTimingObserver,
+                    browserInfo: !!this.browserInfoObserver
+                }
+            });
+        }
     }
     /**
      * 开始监控核心Web指标

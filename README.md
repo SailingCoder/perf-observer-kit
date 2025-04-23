@@ -253,6 +253,18 @@ perfMonitor.setDebugMode(true);  // Enable debug mode
 
 // Clear collected metrics
 perfMonitor.clearMetrics();
+
+// Advanced usage: Configure logger directly
+import { logger } from 'perf-observer-kit';
+
+// Enable logs in production environment
+logger.setOptions({
+  disableInProduction: false
+});
+
+// Check current logger configuration
+const config = logger.getConfiguration();
+console.log('Current logger config:', config);
 ```
 
 Log levels:
@@ -261,6 +273,8 @@ Log levels:
 - 2: WARN - Warnings and errors (default)  
 - 3: INFO - Information, warnings, and errors
 - 4: DEBUG - Verbose debug information
+
+**Note**: For troubleshooting in production environments, the logger can now show debug information by setting `logger.setOptions({disableInProduction: false})`. This is particularly useful when debugging performance issues in a production context.
 </details>
 
 <details>

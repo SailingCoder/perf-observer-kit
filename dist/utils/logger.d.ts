@@ -37,6 +37,11 @@ export declare class Logger {
      */
     setLevel(level: LogLevel): void;
     /**
+     * 设置日志器选项
+     * @param options 要设置的选项
+     */
+    setOptions(options: LoggerOptions): void;
+    /**
      * 输出调试日志
      * @param args 日志内容
      */
@@ -62,6 +67,16 @@ export declare class Logger {
      * @returns 是否应该输出
      */
     private shouldLog;
+    /**
+     * 获取当前日志配置
+     * @returns 当前日志配置
+     */
+    getConfiguration(): {
+        level: LogLevel;
+        levelName: string;
+        disableInProduction: boolean;
+        isProduction: boolean;
+    };
 }
 /**
  * 全局默认日志器实例

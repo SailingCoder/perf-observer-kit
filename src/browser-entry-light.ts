@@ -1,10 +1,14 @@
 /**
- * 轻量级浏览器入口文件
- * 提供最小化版本，仅包含核心功能
+ * 浏览器轻量级入口文件
+ * 针对只需要核心功能的场景
  */
 
 import { PerfObserverKit } from './perf-observer-kit';
-import { MetricType } from './types/metric-types';
+import { MetricType } from './types';
+import { logger, LogLevel } from './utils/logger';
 
-export { PerfObserverKit, MetricType };
-export default { PerfObserverKit, MetricType }; 
+// 命名导出
+export { PerfObserverKit, MetricType, logger, LogLevel };
+
+// 默认导出
+export default { PerfObserverKit, MetricType, logger, LogLevel }; 

@@ -252,6 +252,18 @@ perfMonitor.setDebugMode(true);  // 启用调试模式
 
 // 清除收集的指标
 perfMonitor.clearMetrics();
+
+// 高级用法：直接配置日志器
+import { logger } from 'perf-observer-kit';
+
+// 在生产环境中启用日志
+logger.setOptions({
+  disableInProduction: false
+});
+
+// 检查当前日志器配置
+const config = logger.getConfiguration();
+console.log('当前日志配置:', config);
 ```
 
 日志级别：
@@ -260,6 +272,8 @@ perfMonitor.clearMetrics();
 - 2: WARN - 警告和错误（默认）
 - 3: INFO - 信息、警告和错误
 - 4: DEBUG - 详细调试信息
+
+**注意**：在生产环境中进行故障排除时，日志器现在可以通过设置 `logger.setOptions({disableInProduction: false})` 来显示调试信息。这在生产环境中调试性能问题时特别有用。
 </details>
 
 <details>

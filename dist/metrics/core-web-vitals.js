@@ -16,7 +16,7 @@ export class CoreWebVitalsObserver {
         this.onUpdate = options.onUpdate;
         this.options = {
             // 默认不启用，必须显式配置
-            enabled: options.enabled !== undefined ? options.enabled : false,
+            enabled: options.enabled !== undefined ? options.enabled : true,
             // 所有指标默认都不启用，必须显式配置启用
             fcp: options.fcp !== undefined ? options.fcp : true,
             lcp: options.lcp !== undefined ? options.lcp : true,
@@ -27,6 +27,7 @@ export class CoreWebVitalsObserver {
             backgroundLoadThreshold: options.backgroundLoadThreshold,
             ...options
         };
+        console.log('core-web-vitals options', options, this.options);
         logger.debug('核心Web指标观察者已创建，初始配置:', {
             enabled: this.options.enabled,
             fcp: this.options.fcp,
