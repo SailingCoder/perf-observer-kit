@@ -114,7 +114,7 @@ export class ResourceTimingObserver {
 
     // 检查是否为重复条目
     const isDuplicate = this.resources.some(
-      r => r.name === resourceEntry.name && r.startTime === resourceEntry.startTime
+      r => r.url === resourceEntry.name && r.startTime === resourceEntry.startTime
     );
     
     if (isDuplicate) {

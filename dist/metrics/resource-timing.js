@@ -93,7 +93,7 @@ export class ResourceTimingObserver {
             return false;
         }
         // 检查是否为重复条目
-        const isDuplicate = this.resources.some(r => r.name === resourceEntry.name && r.startTime === resourceEntry.startTime);
+        const isDuplicate = this.resources.some(r => r.url === resourceEntry.name && r.startTime === resourceEntry.startTime);
         if (isDuplicate) {
             logger.debug('忽略重复的资源:', this.shortenUrl(resourceEntry.name));
         }
@@ -115,7 +115,7 @@ export class ResourceTimingObserver {
         // 获取网络信息
         const networkMetrics = NetworkMetricsCollector.getNetworkInformation();
         return {
-            name: resourceEntry.name,
+            url: resourceEntry.name,
             initiatorType: resourceEntry.initiatorType,
             startTime: resourceEntry.startTime,
             duration: resourceEntry.duration,

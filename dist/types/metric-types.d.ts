@@ -50,7 +50,7 @@ export interface CoreWebVitalsMetrics {
  * 资源加载指标数据
  */
 export interface ResourceMetrics {
-    name: string;
+    url: string;
     initiatorType: string;
     startTime: number;
     duration: number;
