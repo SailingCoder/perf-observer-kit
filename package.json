@@ -1,6 +1,6 @@
 {
   "name": "perf-observer-kit",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "description": "A lightweight, flexible library for monitoring web performance metrics including Core Web Vitals, resource loading performance, long tasks, and navigation timing.",
   "main": "dist/index.js",
   "module": "dist/index.js",

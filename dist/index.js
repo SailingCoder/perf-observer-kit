@@ -2522,7 +2522,7 @@ class BrowserInfoObserver {
 
 // 从package.json获取版本号 - 这个值会在构建时被rollup插件替换
 // 使用字符串形式，避免TypeScript编译错误
-const VERSION = '0.0.4';
+const VERSION = '0.0.5';
 /**
  * 性能观察工具包 - 性能监控的主类
  */
@@ -3063,12 +3063,4 @@ if (typeof window !== 'undefined') {
 }
 
 export { MetricType, PerfObserverKit };
-//# sourceMappingURL=index.js.map
-PerfObserverKit = {
-        PerfObserverKit,
-        MetricType: exports.MetricType
-    };
-}
-
-exports.PerfObserverKit = PerfObserverKit;
 //# sourceMappingURL=index.js.map
