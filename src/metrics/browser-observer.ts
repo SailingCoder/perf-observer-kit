@@ -11,7 +11,7 @@ export interface BrowserInfoObserverOptions {
     /** 是否启用该观察者，默认为true */
     enabled?: boolean;
 
-    /** 是否在窗口大小变化时重新收集，默认为true */
+    /** 是否在窗口大小变化时重新收集，默认为false */
     trackResize?: boolean;
 
     /** 是否包含详细的操作系统信息，默认为true */
@@ -39,7 +39,7 @@ export class BrowserInfoObserver {
         this.onUpdate = options.onUpdate;
         this.options = {
             enabled: options.enabled !== undefined ? options.enabled : true,
-            trackResize: options.trackResize !== undefined ? options.trackResize : true,
+            trackResize: options.trackResize !== undefined ? options.trackResize : false,
             includeOSDetails: options.includeOSDetails !== undefined ? options.includeOSDetails : true,
             includeSizeInfo: options.includeSizeInfo !== undefined ? options.includeSizeInfo : true,
             onUpdate: options.onUpdate

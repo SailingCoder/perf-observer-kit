@@ -102,20 +102,39 @@ export interface LongTaskMetrics {
  * 导航计时指标数据
  */
 export interface NavigationMetrics {
-  ttfb?: number; // 首字节时间
-  domContentLoaded?: number; // 文档加载完成时间      
-  loadEvent?: number; // 页面加载完成时间
-  processingTime?: number; // DOM处理时间
+  // --- 导航阶段 ---
+  unloadTime?: number; // 卸载时间
+  redirectTime?: number; // 重定向时间
+  
+  // --- 服务工作线程和缓存 ---
+  serviceWorkerTime?: number; // 服务工作线程时间
+  appCacheTime?: number; // 应用缓存时间
+  
+  // --- 网络连接阶段 ---
   dnsTime?: number; // DNS解析时间
   tcpTime?: number; // TCP连接时间
   sslTime?: number; // SSL/TLS握手时间
+  
+  // --- 请求/响应阶段 ---
+  ttfb?: number; // 首字节时间
   requestTime?: number; // 请求发送时间
   responseTime?: number; // 响应接收时间
-  loadEventDuration?: number; // load事件处理时间
-  totalLoadTime?: number; // 总加载时间（从导航开始到load事件结束）
   resourceFetchTime?: number; // 资源获取总时间
+  
+  // --- DOM处理阶段 ---
+  initDOMTime?: number; // DOM初始化时间
+  processingTime?: number; // DOM处理时间
+  contentLoadTime?: number; // 内容加载时间
+  domContentLoaded?: number; // 文档加载完成时间      
+  
+  // --- 页面加载完成指标 ---
+  loadEventDuration?: number; // load事件处理时间
+  frontEndTime?: number; // 前端渲染时间
+  totalLoadTime?: number; // 总加载时间（从导航开始到load事件结束）
+  
+  // --- 元数据 ---
   url?: string; // 页面URL地址
-  networkInfo?: {
+  networkMetrics?: {
     downlink?: number; // 下行速度 (Mbps)
     effectiveType?: string; // 网络类型 (4g, 3g等)
     rtt?: number; // 往返时间 (ms)
@@ -124,6 +143,7 @@ export interface NavigationMetrics {
   timestamp?: number; // 记录时的时间戳
   rawTiming?: Record<string, any>; // 原始性能数据
   complete?: boolean; // 是否已收集到完整的导航计时数据
+  metric?: string; // 指标类型
 }
 
 /**
