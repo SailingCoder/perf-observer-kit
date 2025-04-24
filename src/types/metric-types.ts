@@ -64,18 +64,18 @@ export interface CoreWebVitalsMetrics {
 export interface ResourceMetrics {
   url: string; // 资源URL地址
   initiatorType: string; // 资源发起者类型
-  startTime: number; // 资源开始时间
-  duration: number; // 资源加载时间
-  transferSize?: number; // 传输大小
-  decodedBodySize?: number; // 解码后的大小
-  encodedSize?: number; // 编码后的大小
-  responseEnd: number; // 响应结束时间
-  ttfb?: number; // 首字节时间
-  dnsTime?: number; // DNS解析时间
-  tcpTime?: number; // TCP连接时间
-  sslTime?: number; // SSL握手时间
-  requestTime?: number; // 请求发送时间
-  responseTime?: number; // 响应接收时间
+  startTime: number; // 资源开始时间 ms
+  duration: number; // 资源加载时间 ms
+  transferSize?: number; // 传输大小 Byte
+  decodedBodySize?: number; // 解码后的大小 Byte
+  encodedSize?: number; // 编码后的大小 Byte  
+  responseEnd: number; // 响应结束时间 ms
+  ttfb?: number; // 首字节时间 ms
+  dnsTime?: number; // DNS解析时间 ms
+  tcpTime?: number; // TCP连接时间 ms
+  sslTime?: number; // SSL握手时间 ms
+  requestTime?: number; // 请求发送时间 ms
+  responseTime?: number; // 响应接收时间 ms   
   code?: number; // HTTP状态码
   networkMetrics?: {
     downlink?: number; // 下行速度 (Mbps)
