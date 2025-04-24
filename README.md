@@ -3,16 +3,22 @@
 ![Version](https://img.shields.io/npm/v/perf-observer-kit)
 ![License](https://img.shields.io/npm/l/perf-observer-kit)
 
-A lightweight, flexible library for monitoring web performance metrics including Core Web Vitals, resource loading performance, long tasks, and navigation timing.
+A modular, lightweight frontend performance monitoring library designed for tracking Web performance metrics, including Core Web Vitals, resource loading performance, long tasks execution, and navigation timing.
 
 [English](https://github.com/SailingCoder/perf-observer-kit/blob/main/README.md) | [中文文档](https://github.com/SailingCoder/perf-observer-kit/blob/main/README_CN.md)
 
+## 🆕 Recent Updates
+
+- **INP Metric Support**: Full support for Google's upcoming Interaction to Next Paint metric
+- **Optimized CLS Implementation**: Using the latest session window algorithm, compliant with Google's standards
+- **Enhanced Logging System**: Improved debugging capabilities with production environment troubleshooting support
+
 ## 📋 Features
 
-- 📊 **Core Web Vitals** - Monitor FCP, LCP, FID, CLS, INP
+- 📊 **Core Web Vitals** - Monitor FCP (First Contentful Paint), LCP (Largest Contentful Paint), FID (First Input Delay), CLS (Cumulative Layout Shift), INP (Interaction to Next Paint)
 - 🔄 **Resource Timing** - Track loading performance of scripts, stylesheets, images
 - ⏱️ **Long Tasks** - Detect JavaScript tasks blocking the main thread
-- 🧭 **Navigation Timing** - Measure TTFB, DOM events, page load metrics
+- 🧭 **Navigation Timing** - Measure TTFB (Time to First Byte), DOM events, page load metrics
 - 🖥️ **Browser Info** - Collect browser, OS, and device details
 - 📱 **Responsive** - Works on mobile and desktop browsers
 - ⚡ **BFCache Support** - Properly handles back/forward cache scenarios
@@ -82,6 +88,13 @@ const perfMonitor = new PerfObserverKit({
 });
 ```
 
+**Core Metrics Explained:**
+- **FCP (First Contentful Paint)**: The time at which the first text, image, non-white canvas, or SVG is painted, marking when users first see content on the page.
+- **LCP (Largest Contentful Paint)**: The time when the largest content element (usually a main image or text block) in the viewport is rendered, indicating when the main content is visible.
+- **FID (First Input Delay)**: The time from when a user first interacts with the page (e.g., clicks a link or button) until the browser is able to respond to that interaction, measuring interaction responsiveness.
+- **CLS (Cumulative Layout Shift)**: Measures the degree to which page elements unexpectedly move during loading, quantifying visual stability.
+- **INP (Interaction to Next Paint)**: Measures the time from user interaction with the page to the next screen update, providing a comprehensive measure of page responsiveness.
+
 **Thresholds:**
 - FCP: Good ≤ 1.8s, Poor > 3.0s
 - LCP: Good ≤ 2.5s, Poor > 4.0s
@@ -101,9 +114,9 @@ For detailed information on CLS implementation and strategies, see the [Cumulati
 const perfMonitor = new PerfObserverKit({
   resources: {
     enabled: true,
-    maxResources: 100,
-    excludedPatterns: [/google-analytics/, /doubleclick/, 'analytics-tracker.com'],  // Exclude analytics
-    allowedTypes: ['script', 'link', 'img', 'css']  // Types to monitor
+    excludedPatterns: [/analytics\.com/, /tracker/, 'analytics-tracker.com'],  // Exclude analytics
+    allowedTypes: ['script', 'img'],  // Types to monitor, default ['script', 'link', 'img', 'css', 'font']
+    maxResources: 100                   // Maximum entries to store
   }
 });
 ```
@@ -128,7 +141,9 @@ const perfMonitor = new PerfObserverKit({
 });
 ```
 
-Detects JavaScript tasks that block the main thread for more than 50ms, providing:
+**Long Tasks Explained:** Long tasks are JavaScript operations that block the main thread for longer than a specific threshold (typically 50ms), causing user interaction delays and UI jank. Monitoring long tasks helps identify performance bottlenecks and optimize JavaScript execution.
+
+Provides information on:
 - Task duration
 - Task attribution (script source)
 - Task start time
@@ -137,6 +152,8 @@ Detects JavaScript tasks that block the main thread for more than 50ms, providin
 <details>
 <summary><b>Navigation Timing</b></summary>
 
+Navigation timing monitors key time points during page load, such as TTFB (Time to First Byte) and DOM loading time.
+
 ```javascript
 const perfMonitor = new PerfObserverKit({
   navigation: {
@@ -144,17 +161,53 @@ const perfMonitor = new PerfObserverKit({
     includeRawTiming: false, // Whether to include raw navigation timing data
     onUpdate: (metrics) => {
       console.log('Navigation timing metrics:', metrics);
-      // Includes domainLookupTime, tcpConnectTime, ttfb, responseTime, domParse, domContentLoaded, loadEvent, etc.
+      // Includes performance metrics for all phases
     }
   }
 });
 ```
 
-Measures key page load metrics:
-- TTFB (Time to First Byte)
-- DOM Content Loaded
-- Load Event
-- Network connection details
+![Navigation Timing Metrics](https://github.com/SailingCoder/perf-observer-kit/raw/main/docs/images/image.png)
+
+**Navigation Timing Metrics (Grouped by Loading Phase):**
+
+*Navigation Phase*
+- **unloadTime**: Time to unload the previous page
+- **redirectTime**: Time spent in redirects
+
+*Service Worker and Cache*
+- **serviceWorkerTime**: Service Worker startup time
+- **appCacheTime**: Application cache time
+
+*Network Connection Phase*
+- **dnsTime**: DNS resolution time
+- **tcpTime**: TCP connection time
+- **sslTime**: SSL handshake time
+
+*Request/Response Phase*
+- **ttfb**: Time to First Byte, time from page request to receiving the first byte
+- **requestTime**: Request sending time
+- **responseTime**: Response receiving time
+- **resourceFetchTime**: Total resource fetch time
+
+*DOM Processing Phase*
+- **initDOMTime**: DOM initialization time
+- **processingTime**: DOM processing time
+- **contentLoadTime**: Content loading time
+- **domContentLoaded**: Time when HTML document is fully loaded and parsed
+
+*Page Load Completion Metrics*
+- **loadEventDuration**: Load event processing time
+- **frontEndTime**: Frontend rendering time
+- **totalLoadTime**: Total loading time (from navigation start to load event end)
+
+*Metadata*
+- **url**: Page URL
+- **networkMetrics**: Network information (downlink speed, network type, RTT, etc.)
+- **timestamp**: Timestamp when metrics were recorded
+- **rawTiming**: Raw performance data (available when includeRawTiming option is enabled)
+- **complete**: Whether complete navigation timing data has been collected
+- **metric**: Metric type
 
 > **Implementation Detail**: The library uses window.addEventListener('load') to collect navigation events and guarantees that metrics are only reported when loadEventEnd is available, ensuring you get accurate loadEventDuration values. Navigation timing data is collected only once per page load.
 
@@ -168,7 +221,7 @@ For detailed information on all navigation timing metrics, see the [Navigation T
 const perfMonitor = new PerfObserverKit({
   browserInfo: {
     enabled: true,             // Enabled by default
-    trackResize: true,         // Update on window resize
+    trackResize: false,        // Update on window resize, default false
     includeOSDetails: true,    // Include OS information
     includeSizeInfo: true      // Include screen/window size
   }
@@ -198,7 +251,7 @@ const perfMonitor = new PerfObserverKit({
   coreWebVitals: true,       // Enable Core Web Vitals (boolean or object)
   resources: true,           // Enable Resource Timing (boolean or object)
   longTasks: true,           // Enable Long Tasks (boolean or object)
-  navigation: true,    // Enable Navigation Timing (boolean or object)
+  navigation: true,          // Enable Navigation Timing (boolean or object)
   browserInfo: true          // Enable Browser Info (boolean or object)
 });
 ```
@@ -302,6 +355,64 @@ Log levels:
 </details>
 
 <details>
+<summary><b>Best Practices</b></summary>
+
+1.  **Selective Enabling**: Only enable the monitoring modules you need to reduce performance overhead
+    ```javascript
+    const monitor = new PerfObserverKit({
+      coreWebVitals: { enabled: true, fcp: true, lcp: true },
+      resources: false,
+      longTasks: false,
+      navigation: true
+    });
+    ```
+
+2.  **Sampling for High-Traffic Sites**: Use sampling rate to control the volume of monitoring data
+    ```javascript
+    const monitor = new PerfObserverKit({
+      samplingRate: 0.1  // Only 10% of users will be monitored
+    });
+    ```
+
+3.  **Resource Monitoring Filtering**: Exclude analytics tools and other irrelevant resources
+    ```javascript
+    const monitor = new PerfObserverKit({
+      resources: {
+        excludedPatterns: [/analytics/, /tracking/, /ads/]
+      }
+    });
+    ```
+
+4.  **BFCache Event Integration**: Reinitialize when page restores from BFCache
+    ```javascript
+    window.addEventListener('pageshow', (event) => {
+      if (event.persisted) {
+        // Page restored from BFCache
+        monitor.clearMetrics();
+        monitor.start();
+      }
+    });
+    ```
+
+5.  **Avoid Large Data Transfers**: Send data periodically or set reasonable batch sizes
+    ```javascript
+    let metricsBuffer = [];
+
+    const monitor = new PerfObserverKit({
+      onMetrics: (type, metrics) => {
+        metricsBuffer.push({type, metrics, timestamp: Date.now()});
+        
+        if (metricsBuffer.length >= 10) {
+          sendToAnalytics(metricsBuffer);
+          metricsBuffer = [];
+        }
+      }
+    });
+    ```
+
+</details>
+
+<details>
 <summary><b>Troubleshooting</b></summary>
 
 ### "PerfObserverKit is not defined" error
@@ -337,6 +448,19 @@ This library primarily relies on:
 
 For browsers that don't support certain performance metrics, the library gracefully degrades and only collects supported metrics.
 </details>
+
+## 💪 Advantages Over Other Performance Monitoring Libraries
+
+1.  **Modular Design**: Enable only the functionality you need, reducing performance overhead
+2.  **Complete Core Vitals Support**: Full support for all Google Core Web Vitals metrics, including the newest INP
+3.  **Precise CLS Implementation**: Using the latest session window algorithm, compliant with Google standards
+4.  **Comprehensive Resource Monitoring**: Configurable resource filtering and detailed resource loading performance data
+5.  **Flexible Sampling Strategy**: Support for proportional sampling, suitable for high-traffic production environments
+6.  **BFCache Support**: Properly handles browser back/forward cache scenarios
+7.  **Rich Context Data**: Provides more comprehensive contextual information than simple metric values
+8.  **Powerful Debugging Capabilities**: Multi-level logging system with production troubleshooting support
+9.  **Graceful Degradation**: Still collects available metrics in browsers that don't support certain APIs
+10. **Lightweight**: Small core size with minimal impact on page performance
 
 ## 📊 Examples
 
