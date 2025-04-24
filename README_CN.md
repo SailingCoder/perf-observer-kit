@@ -47,7 +47,8 @@ const perfMonitor = new PerfObserverKit({
   coreWebVitals: true, // 启用核心指标监控，默认 FCP LCP
   resources: true,     // 启用资源监控
   longTasks: true,     // 启用长任务监控
-  navigation: true     // 启用导航计时监控
+  navigation: true,    // 启用导航计时监控
+  browserInfo: true    // 启用浏览器信息监控
 });
 
 // 开始监控
@@ -223,15 +224,13 @@ const perfObserver = new PerfObserverKit({
 ```javascript
 const perfMonitor = new PerfObserverKit({
   browserInfo: {
-    enabled: true,             // 默认启用
+    enabled: true,             // 启用浏览器信息监控
     trackResize: false,        // 窗口大小变化时更新，默认false
     includeOSDetails: true,    // 包含操作系统信息
     includeSizeInfo: true      // 包含屏幕/窗口大小
   }
 });
 ```
-
-**注意：** 浏览器信息是唯一默认启用的模块。
 </details>
 
 <details>

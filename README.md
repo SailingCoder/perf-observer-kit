@@ -47,7 +47,8 @@ const perfMonitor = new PerfObserverKit({
   coreWebVitals: true, // default FCP LCP
   resources: true,
   longTasks: true,
-  navigation: true
+  navigation: true,
+  browserInfo: true     // Enable browser information
 });
 
 // Start monitoring
@@ -220,15 +221,13 @@ For detailed information on all navigation timing metrics, see the [Navigation T
 ```javascript
 const perfMonitor = new PerfObserverKit({
   browserInfo: {
-    enabled: true,             // Enabled by default
+    enabled: true,             // Enable browser information monitoring
     trackResize: false,        // Update on window resize, default false
     includeOSDetails: true,    // Include OS information
     includeSizeInfo: true      // Include screen/window size
   }
 });
 ```
-
-**Note:** Browser Information is the only module enabled by default.
 </details>
 
 <details>

@@ -88,20 +88,26 @@ export interface LongTaskMetrics {
  * 导航计时指标数据
  */
 export interface NavigationMetrics {
-    ttfb?: number;
-    domContentLoaded?: number;
-    loadEvent?: number;
-    processingTime?: number;
+    unloadTime?: number;
+    redirectTime?: number;
+    serviceWorkerTime?: number;
+    appCacheTime?: number;
     dnsTime?: number;
     tcpTime?: number;
     sslTime?: number;
+    ttfb?: number;
     requestTime?: number;
     responseTime?: number;
-    loadEventDuration?: number;
-    totalLoadTime?: number;
     resourceFetchTime?: number;
+    initDOMTime?: number;
+    processingTime?: number;
+    contentLoadTime?: number;
+    domContentLoaded?: number;
+    loadEventDuration?: number;
+    frontEndTime?: number;
+    totalLoadTime?: number;
     url?: string;
-    networkInfo?: {
+    networkMetrics?: {
         downlink?: number;
         effectiveType?: string;
         rtt?: number;
@@ -110,6 +116,7 @@ export interface NavigationMetrics {
     timestamp?: number;
     rawTiming?: Record<string, any>;
     complete?: boolean;
+    metric?: string;
 }
 /**
  * 所有性能指标数据集合

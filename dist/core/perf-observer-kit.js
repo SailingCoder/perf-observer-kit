@@ -31,29 +31,23 @@ export class PerfObserverKit {
             browserInfo: {}
         };
         this.isRunning = false;
-        // 验证选项
+        // 检查基本兼容性
+        this.checkBrowserCompatibility();
+        // 验证输入选项
         this.validateOptions(options);
-        // 初始化日志级别
+        // 规范化和组合选项
         const logLevel = this.determineLogLevel(options);
-        // 构建内部选项配置
         this.options = {
-            // 回调函数，在指标更新时调用
             onMetrics: options.onMetrics || null,
-            // 通用设置
-            debug: options.debug || false,
-            logLevel: logLevel,
-            autoStart: options.autoStart || false,
-            samplingRate: options.samplingRate === undefined ? 0 : options.samplingRate,
-            // 核心Web指标配置
+            debug: options.debug !== undefined ? options.debug : false,
+            logLevel,
+            autoStart: options.autoStart !== undefined ? options.autoStart : false,
+            samplingRate: options.samplingRate !== undefined ? options.samplingRate : 0,
             coreWebVitals: this.normalizeCoreWebVitalsOptions(options.coreWebVitals),
-            // 资源计时配置
             resources: this.normalizeResourceOptions(options.resources),
-            // 长任务配置
             longTasks: this.normalizeModuleOptions(options.longTasks, false),
-            // 导航计时配置
             navigation: this.normalizeModuleOptions(options.navigation, false),
-            // 浏览器信息配置 - 唯一默认启用的模块
-            browserInfo: this.normalizeModuleOptions(options.browserInfo, true)
+            browserInfo: this.normalizeModuleOptions(options.browserInfo, false)
         };
         // 初始化日志系统 - 通过显式设置选项，确保即使在生产环境也能使用调试模式
         logger.setOptions({
@@ -62,8 +56,6 @@ export class PerfObserverKit {
         });
         // 输出初始化日志
         logger.debug('PerfObserverKit初始化完成，配置:', this.options);
-        // 检查浏览器支持
-        this.checkBrowserCompatibility();
         // 如果启用了自动开始，则自动启动监控
         if (this.options.autoStart) {
             this.start();
@@ -152,7 +144,7 @@ export class PerfObserverKit {
                 excludedPatterns: normalizedOptions.excludedPatterns || [],
                 allowedTypes: normalizedOptions.allowedTypes || [], // 默认允许所有类型
                 captureNetworkInfo: normalizedOptions.captureNetworkInfo !== undefined ? normalizedOptions.captureNetworkInfo : true,
-                maxEntries: normalizedOptions.maxEntries !== undefined ? normalizedOptions.maxEntries : 1000
+                maxEntries: normalizedOptions.maxEntries !== undefined ? normalizedOptions.maxEntries : 100
             };
         }
         catch (error) {
@@ -163,7 +155,7 @@ export class PerfObserverKit {
                 excludedPatterns: [],
                 allowedTypes: [],
                 captureNetworkInfo: true,
-                maxEntries: 1000
+                maxEntries: 100
             };
         }
     }
@@ -234,8 +226,7 @@ export class PerfObserverKit {
         this.startObserver('resources', this.startResourceTimingMonitoring.bind(this));
         this.startObserver('longTasks', this.startLongTasksMonitoring.bind(this));
         this.startObserver('navigation', this.startNavigationMonitoring.bind(this));
-        // 浏览器信息 - 默认启用，无论配置如何都启动
-        this.startBrowserInfoMonitoring();
+        this.startObserver('browserInfo', this.startBrowserInfoMonitoring.bind(this));
         this.isRunning = true;
         logger.debug('所有启用的性能监控模块已启动');
     }
@@ -471,12 +462,18 @@ export class PerfObserverKit {
     startBrowserInfoMonitoring() {
         try {
             const options = this.options.browserInfo;
+            // 如果配置未启用，则直接返回
+            if (!options.enabled) {
+                logger.debug('浏览器信息监控未启用');
+                return;
+            }
             this.browserInfoObserver = new BrowserInfoObserver({
                 onUpdate: (browserInfo) => {
                     this.metrics.browserInfo = browserInfo;
                     this.notifyMetricsUpdate(MetricType.BROWSER_INFO, browserInfo);
                 },
-                enabled: true, // 强制启用，无论配置如何
+                // 不再强制设为true，而是使用配置值
+                enabled: options.enabled,
                 trackResize: options.trackResize,
                 includeOSDetails: options.includeOSDetails,
                 includeSizeInfo: options.includeSizeInfo

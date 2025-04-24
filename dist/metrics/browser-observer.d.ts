@@ -6,7 +6,7 @@ export interface BrowserInfoObserverOptions {
     onUpdate: (browserInfo: Record<string, any>) => void;
     /** 是否启用该观察者，默认为true */
     enabled?: boolean;
-    /** 是否在窗口大小变化时重新收集，默认为true */
+    /** 是否在窗口大小变化时重新收集，默认为false */
     trackResize?: boolean;
     /** 是否包含详细的操作系统信息，默认为true */
     includeOSDetails?: boolean;

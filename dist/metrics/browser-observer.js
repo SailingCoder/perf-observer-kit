@@ -16,7 +16,7 @@ export class BrowserInfoObserver {
         this.onUpdate = options.onUpdate;
         this.options = {
             enabled: options.enabled !== undefined ? options.enabled : true,
-            trackResize: options.trackResize !== undefined ? options.trackResize : true,
+            trackResize: options.trackResize !== undefined ? options.trackResize : false,
             includeOSDetails: options.includeOSDetails !== undefined ? options.includeOSDetails : true,
             includeSizeInfo: options.includeSizeInfo !== undefined ? options.includeSizeInfo : true,
             onUpdate: options.onUpdate
