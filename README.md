@@ -102,7 +102,7 @@ const perfMonitor = new PerfObserverKit({
   resources: {
     enabled: true,
     maxResources: 100,
-    excludedPatterns: [/google-analytics/, /doubleclick/],  // Exclude analytics
+    excludedPatterns: [/google-analytics/, /doubleclick/, 'analytics-tracker.com'],  // Exclude analytics
     allowedTypes: ['script', 'link', 'img', 'css']  // Types to monitor
   }
 });

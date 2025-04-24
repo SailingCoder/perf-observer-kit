@@ -101,7 +101,7 @@ const perfMonitor = new PerfObserverKit({
 const perfMonitor = new PerfObserverKit({
   resources: {
     enabled: true,
-    excludedPatterns: [/analytics\.com/, /tracker/],  // 排除分析工具
+    excludedPatterns: [/analytics\.com/, /tracker/, 'analytics-tracker.com'],  // 排除分析工具
     allowedTypes: ['script', 'img', 'css', 'fetch'],  // 要监控的类型
     maxEntries: 500                                   // 最大存储条目数
   }
