@@ -3,20 +3,20 @@
 ![版本](https://img.shields.io/npm/v/perf-observer-kit)
 ![许可证](https://img.shields.io/npm/l/perf-observer-kit)
 
-一个轻量级、灵活的库，用于监控网页性能指标，包括核心网页指标（Core Web Vitals）、资源加载性能、长任务（Long Tasks）和导航计时（Navigation Timing）。
+一款模块化、轻量级的前端性能监控库，专为监测 Web 性能指标而设计，包括核心网页指标 (Core Web Vitals)、资源加载性能、长任务执行和导航计时。
 
 [English](https://github.com/SailingCoder/perf-observer-kit/blob/main/README.md) | [中文文档](https://github.com/SailingCoder/perf-observer-kit/blob/main/README_CN.md)
 
-## 📋 功能特点
+## 📋 特性
 
-- 📊 **核心网页指标** - 监控 FCP、LCP、FID、CLS、INP
-- 🔄 **资源计时** - 跟踪脚本、样式表、图片等资源加载性能
-- ⏱️ **长任务监控** - 检测阻塞主线程的 JavaScript 任务
-- 🧭 **导航计时** - 测量 TTFB、DOM 事件、页面加载指标
-- 🖥️ **浏览器信息** - 收集浏览器、操作系统和设备详情
-- 📱 **响应式设计** - 兼容移动端和桌面端浏览器
-- ⚡ **支持 BFCache** - 正确处理浏览器前进/后退缓存场景
-- 📝 **灵活的日志系统** - 可配置的调试日志
+*   📊 **核心网页指标监控** - 监控 FCP、LCP、FID、CLS、INP 等关键性能指标
+*   🔄 **资源加载监控** - 跟踪脚本、样式表、图片等资源的加载性能
+*   ⏱️ **长任务监测** - 检测主线程阻塞超过指定阈值的 JavaScript 任务
+*   🧭 **导航计时** - 完整收集导航相关的所有性能指标，如TTFB、页面完全加载等关键指标
+*   🖥️ **浏览器和环境信息** - 收集浏览器、操作系统和设备详情，以及屏幕尺寸和窗口大小
+*   📱 **响应式兼容** - 适用于移动和桌面浏览器
+*   ⚡ **BFCache 支持** - 正确处理浏览器前进/后退缓存场景
+*   📝 **灵活日志系统** - 可配置的调试日志记录
 
 ## 🚀 快速开始
 
@@ -35,19 +35,19 @@ import { PerfObserverKit } from 'perf-observer-kit';
 const perfMonitor = new PerfObserverKit({
   onMetrics: (type, metrics) => {
     console.log(`指标更新 [${type}]:`, metrics);
-    // 将指标发送到您的分析平台
+    // 将指标数据发送到您的分析平台
   },
   // 启用所有监控模块
-  coreWebVitals: true, // default FCP LCP
-  resources: true,
-  longTasks: true,
-  navigation: true
+  coreWebVitals: true, // 启用核心指标监控，默认 FCP LCP
+  resources: true,     // 启用资源监控
+  longTasks: true,     // 启用长任务监控
+  navigation: true     // 启用导航计时监控
 });
 
 // 开始监控
 perfMonitor.start();
 
-// 随时获取指标
+// 随时访问指标
 const currentMetrics = perfMonitor.getMetrics();
 ```
 
@@ -64,7 +64,7 @@ const currentMetrics = perfMonitor.getMetrics();
 </script>
 ```
 
-## 📖 文档
+## 📖 文档（详细配置）
 
 <details>
 <summary><b>核心网页指标监控</b></summary>
@@ -73,11 +73,11 @@ const currentMetrics = perfMonitor.getMetrics();
 const perfMonitor = new PerfObserverKit({
   coreWebVitals: {
     enabled: true,       // 启用核心网页指标监控
-    fcp: true,           // 首次内容绘制
-    lcp: true,           // 最大内容绘制
-    fid: true,           // 首次输入延迟
-    cls: true,           // 累积布局偏移
-    inp: true            // 交互到下一次绘制
+    fcp: true,           // 首次内容绘制 - 页面首次显示内容的时间
+    lcp: true,           // 最大内容绘制 - 页面最大内容元素绘制完成的时间
+    fid: true,           // 首次输入延迟 - 用户首次与页面交互的响应时间
+    cls: true,           // 累积布局偏移 - 页面元素位置变化的累积分数
+    inp: true            // 交互到下一次绘制 - 测量页面交互响应性能
   }
 });
 ```
@@ -95,15 +95,15 @@ const perfMonitor = new PerfObserverKit({
 </details>
 
 <details>
-<summary><b>资源计时监控</b></summary>
+<summary><b>资源加载监控</b></summary>
 
 ```javascript
 const perfMonitor = new PerfObserverKit({
   resources: {
     enabled: true,
     excludedPatterns: [/analytics\.com/, /tracker/, 'analytics-tracker.com'],  // 排除分析工具
-    allowedTypes: ['script', 'img', 'css', 'fetch'],  // 要监控的类型
-    maxEntries: 500                                   // 最大存储条目数
+    allowedTypes: ['script', 'img'],  // 要监控的类型，默认 ['script', 'link', 'img', 'css', 'font']
+    maxResources: 100                   // 最大存储条目数
   }
 });
 ```
@@ -112,7 +112,7 @@ const perfMonitor = new PerfObserverKit({
 - 资源 URL 和类型
 - 加载时长和大小
 - 首字节时间 (TTFB)
-- 连接和处理时间
+- 请求开始到完成的各阶段耗时
 </details>
 
 <details>
@@ -167,7 +167,7 @@ const perfObserver = new PerfObserverKit({
 const perfMonitor = new PerfObserverKit({
   browserInfo: {
     enabled: true,             // 默认启用
-    trackResize: true,         // 窗口大小变化时更新
+    trackResize: false,        // 窗口大小变化时更新，默认false
     includeOSDetails: true,    // 包含操作系统信息
     includeSizeInfo: true      // 包含屏幕/窗口大小
   }
@@ -301,6 +301,64 @@ console.log('当前日志配置:', config);
 </details>
 
 <details>
+<summary><b>最佳实践</b></summary>
+
+1.  **选择性启用**：只启用你需要的监控模块，降低性能开销
+    ```javascript
+    const monitor = new PerfObserverKit({
+      coreWebVitals: { enabled: true, fcp: true, lcp: true },
+      resources: false,
+      longTasks: false,
+      navigation: true
+    });
+    ```
+
+2.  **高流量网站使用采样**：使用采样率控制监控数据量
+    ```javascript
+    const monitor = new PerfObserverKit({
+      samplingRate: 0.1  // 10% 的用户会被监控
+    });
+    ```
+
+3.  **资源监控过滤**：排除分析工具等不相关资源
+    ```javascript
+    const monitor = new PerfObserverKit({
+      resources: {
+        excludedPatterns: [/analytics/, /tracking/, /ads/]
+      }
+    });
+    ```
+
+4.  **结合 BFCache 事件**：在页面从 BFCache 恢复时重新初始化
+    ```javascript
+    window.addEventListener('pageshow', (event) => {
+      if (event.persisted) {
+        // 页面从 BFCache 恢复
+        monitor.clearMetrics();
+        monitor.start();
+      }
+    });
+    ```
+
+5.  **避免大量数据传输**：定期发送数据或设置合理的批量大小
+    ```javascript
+    let metricsBuffer = [];
+
+    const monitor = new PerfObserverKit({
+      onMetrics: (type, metrics) => {
+        metricsBuffer.push({type, metrics, timestamp: Date.now()});
+        
+        if (metricsBuffer.length >= 10) {
+          sendToAnalytics(metricsBuffer);
+          metricsBuffer = [];
+        }
+      }
+    });
+    ```
+
+</details>
+
+<details>
 <summary><b>故障排除</b></summary>
 
 ### "PerfObserverKit is not defined" 错误
@@ -336,6 +394,19 @@ console.log('当前日志配置:', config);
 
 对于不支持某些性能指标的浏览器，库会优雅降级，只收集支持的指标。
 </details>
+
+## 💪 相比其他性能监控库的优势
+
+1.  **模块化设计**：可按需启用所需功能，减少性能开销
+2.  **完整的核心指标支持**：全面支持 Google Core Web Vitals 所有指标，包括最新的 INP
+3.  **精确的 CLS 实现**：使用最新的会话窗口算法，符合 Google 标准
+4.  **全面的资源监控**：可配置的资源过滤和详细的资源加载性能数据
+5.  **灵活的采样策略**：支持按比例采样，适合高流量生产环境
+6.  **BFCache 支持**：正确处理浏览器前进/后退缓存场景
+7.  **丰富的上下文数据**：提供比简单指标值更全面的上下文信息
+8.  **强大的调试功能**：多级日志系统，支持生产环境故障排查
+9.  **优雅降级**：在不支持某些 API 的浏览器中仍能收集可用指标
+10. **轻量级**：核心体积小，对页面性能影响极小
 
 ## 📊 示例
 
