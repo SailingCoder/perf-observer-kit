@@ -11,8 +11,8 @@ export class ResourceTimingObserver {
   private observer: PerformanceObserver | null = null;
   private resources: ResourceMetrics[] = [];
   private onUpdate: (resources: ResourceMetrics[]) => void;
-  private excludedPatterns: (string | RegExp)[] = [];
-  private allowedResourceTypes: string[] = ['script', 'link', 'img', 'css', 'font'];
+  private excludedPatterns: (string | RegExp)[] = [];  // 要排除的资源URL模式 [/analytics\.com/, /tracker/, 'analytics-tracker.com']
+  private allowedResourceTypes: string[] = ['script', 'link', 'img', 'css', 'font']; // 允许监控的资源类型
   
   /**
    * 创建资源计时观察者实例
